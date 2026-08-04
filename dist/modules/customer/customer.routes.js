@@ -1,0 +1,18 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.customerRouter = void 0;
+const client_1 = require("@prisma/client");
+const express_1 = require("express");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const rbac_middleware_1 = require("../../middleware/rbac.middleware");
+const async_handler_util_1 = require("../../utils/async-handler.util");
+const customer_controller_1 = require("./customer.controller");
+const customerRouter = (0, express_1.Router)();
+exports.customerRouter = customerRouter;
+const customerController = new customer_controller_1.CustomerController();
+customerRouter.use(auth_middleware_1.authenticate);
+customerRouter.use((0, rbac_middleware_1.requireRoles)(client_1.UserRole.SUPER_ADMIN, client_1.UserRole.ADMIN, client_1.UserRole.MANAGER));
+customerRouter.get('/customers/stats', (0, async_handler_util_1.asyncHandler)(customerController.getCustomerStats));
+customerRouter.get('/customers', (0, async_handler_util_1.asyncHandler)(customerController.getCustomers));
+customerRouter.get('/customers/:id', (0, async_handler_util_1.asyncHandler)(customerController.getCustomerDetails));
+customerRouter.patch('/customers/:id/status', (0, async_handler_util_1.asyncHandler)(customerController.updateCustomerStatus));

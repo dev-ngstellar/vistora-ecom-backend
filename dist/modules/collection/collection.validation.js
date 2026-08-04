@@ -1,0 +1,26 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.updateCollectionSchema = exports.createCollectionSchema = void 0;
+const client_1 = require("@prisma/client");
+const zod_1 = require("zod");
+exports.createCollectionSchema = zod_1.z.object({
+    body: zod_1.z.object({
+        name: zod_1.z.string().min(2, 'Collection name must be at least 2 characters').max(100),
+        slug: zod_1.z.string().optional(),
+        description: zod_1.z.string().nullable().optional(),
+        bannerImage: zod_1.z.string().url('Invalid banner image URL format').nullable().optional(),
+        status: zod_1.z.nativeEnum(client_1.CollectionStatus).optional().default(client_1.CollectionStatus.ACTIVE),
+    }),
+});
+exports.updateCollectionSchema = zod_1.z.object({
+    params: zod_1.z.object({
+        id: zod_1.z.string(),
+    }),
+    body: zod_1.z.object({
+        name: zod_1.z.string().min(2).max(100).optional(),
+        slug: zod_1.z.string().optional(),
+        description: zod_1.z.string().nullable().optional(),
+        bannerImage: zod_1.z.string().url('Invalid banner image URL format').nullable().optional(),
+        status: zod_1.z.nativeEnum(client_1.CollectionStatus).optional(),
+    }),
+});
