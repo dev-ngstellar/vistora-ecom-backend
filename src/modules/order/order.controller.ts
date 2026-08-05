@@ -76,4 +76,18 @@ export class OrderController {
     res.setHeader('Content-Disposition', 'attachment; filename="orders-export.csv"');
     res.status(200).send(csvContent);
   };
+
+  // ==================== CUSTOMER ORDER HANDLERS ====================
+  public createCustomerOrder = async (req: Request, res: Response): Promise<Response> => {
+    const userId = req.user?.id;
+    if (!userId) return ApiResponseHandler.error(res, HTTP_STATUS.UNAUTHORIZED, 'Authentication required');
+
+    const order = await this.orderService.createCustomerOrder(userId, req.body);
+    return ApiResponseHandler.success(res, HTTP_STATUS.CREATED, 'Order placed successfully', order);
+  };
+
+  public verifyPayment = async (req: Request, res: Response): Promise<Response> => {
+    const result = await this.orderService.verifyPayment(req.body);
+    return ApiResponseHandler.success(res, HTTP_STATUS.OK, 'Payment verified successfully', result);
+  };
 }

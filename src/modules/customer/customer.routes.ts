@@ -9,11 +9,33 @@ const customerRouter = Router();
 const customerController = new CustomerController();
 
 customerRouter.use(authenticate);
-customerRouter.use(requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER));
 
-customerRouter.get('/customers/stats', asyncHandler(customerController.getCustomerStats));
-customerRouter.get('/customers', asyncHandler(customerController.getCustomers));
-customerRouter.get('/customers/:id', asyncHandler(customerController.getCustomerDetails));
-customerRouter.patch('/customers/:id/status', asyncHandler(customerController.updateCustomerStatus));
+// ==================== CUSTOMER SELF-SERVICE ADDRESS ROUTES ====================
+customerRouter.get('/customers/addresses', asyncHandler(customerController.getMyAddresses));
+customerRouter.post('/customers/addresses', asyncHandler(customerController.createAddress));
+customerRouter.put('/customers/addresses/:id', asyncHandler(customerController.updateAddress));
+customerRouter.delete('/customers/addresses/:id', asyncHandler(customerController.deleteAddress));
+
+// ==================== ADMIN MANAGEMENT ROUTES ====================
+customerRouter.get(
+  '/customers/stats',
+  requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
+  asyncHandler(customerController.getCustomerStats),
+);
+customerRouter.get(
+  '/customers',
+  requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
+  asyncHandler(customerController.getCustomers),
+);
+customerRouter.get(
+  '/customers/:id',
+  requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
+  asyncHandler(customerController.getCustomerDetails),
+);
+customerRouter.patch(
+  '/customers/:id/status',
+  requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
+  asyncHandler(customerController.updateCustomerStatus),
+);
 
 export { customerRouter };

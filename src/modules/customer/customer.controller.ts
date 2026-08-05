@@ -41,4 +41,35 @@ export class CustomerController {
     const stats = await this.customerService.getCustomerStats();
     return ApiResponseHandler.success(res, HTTP_STATUS.OK, 'Customer statistics retrieved successfully', stats);
   };
+
+  // ==================== ADDRESS HANDLERS ====================
+  public getMyAddresses = async (req: Request, res: Response): Promise<Response> => {
+    const userId = req.user?.id;
+    if (!userId) return ApiResponseHandler.error(res, HTTP_STATUS.UNAUTHORIZED, 'User authentication required');
+    const addresses = await this.customerService.getMyAddresses(userId);
+    return ApiResponseHandler.success(res, HTTP_STATUS.OK, 'Addresses retrieved successfully', addresses);
+  };
+
+  public createAddress = async (req: Request, res: Response): Promise<Response> => {
+    const userId = req.user?.id;
+    if (!userId) return ApiResponseHandler.error(res, HTTP_STATUS.UNAUTHORIZED, 'User authentication required');
+    const address = await this.customerService.createAddress(userId, req.body);
+    return ApiResponseHandler.success(res, HTTP_STATUS.CREATED, 'Address created successfully', address);
+  };
+
+  public updateAddress = async (req: Request, res: Response): Promise<Response> => {
+    const userId = req.user?.id;
+    const addressId = req.params['id'] as string;
+    if (!userId) return ApiResponseHandler.error(res, HTTP_STATUS.UNAUTHORIZED, 'User authentication required');
+    const updated = await this.customerService.updateAddress(userId, addressId, req.body);
+    return ApiResponseHandler.success(res, HTTP_STATUS.OK, 'Address updated successfully', updated);
+  };
+
+  public deleteAddress = async (req: Request, res: Response): Promise<Response> => {
+    const userId = req.user?.id;
+    const addressId = req.params['id'] as string;
+    if (!userId) return ApiResponseHandler.error(res, HTTP_STATUS.UNAUTHORIZED, 'User authentication required');
+    await this.customerService.deleteAddress(userId, addressId);
+    return ApiResponseHandler.success(res, HTTP_STATUS.OK, 'Address deleted successfully', null);
+  };
 }
