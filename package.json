@@ -1,7 +1,7 @@
 {
   "name": "vistora-commerce-api",
   "version": "1.0.0",
-  "description": "Vistora Commerce - Enterprise Single Vendor Fashion eCommerce Platform REST API",
+  "description": "Vistora Commerce - Enterprise Single Vendor Fashion eCommerce System REST API",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch -r tsconfig-paths/register src/server.ts",

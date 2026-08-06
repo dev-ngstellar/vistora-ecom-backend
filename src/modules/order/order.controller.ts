@@ -86,6 +86,14 @@ export class OrderController {
     return ApiResponseHandler.success(res, HTTP_STATUS.CREATED, 'Order placed successfully', order);
   };
 
+  public getMyOrders = async (req: Request, res: Response): Promise<Response> => {
+    const userId = req.user?.id;
+    if (!userId) return ApiResponseHandler.error(res, HTTP_STATUS.UNAUTHORIZED, 'Authentication required');
+
+    const result = await this.orderService.getOrders({ userId, limit: 50 });
+    return ApiResponseHandler.success(res, HTTP_STATUS.OK, 'Customer orders retrieved successfully', result.orders, result.meta);
+  };
+
   public verifyPayment = async (req: Request, res: Response): Promise<Response> => {
     const result = await this.orderService.verifyPayment(req.body);
     return ApiResponseHandler.success(res, HTTP_STATUS.OK, 'Payment verified successfully', result);

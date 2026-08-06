@@ -120,8 +120,21 @@ export class CartService {
 
   public async addToCart(userId: string, input: AddToCartInput): Promise<CartSummaryResponse> {
     const product = await this.productRepository.findByIdFull(input.productId);
-    if (!product || product.status !== 'ACTIVE') {
+    if (!product || product.status === 'DRAFT' || product.status === 'INACTIVE') {
       throw ApiError.badRequest('Selected product is currently unavailable or inactive');
+    }
+    if (product.status === 'OUT_OF_STOCK') {
+      throw ApiError.badRequest('This product is currently out of stock');
+    }
+
+    // Auto-resolve first active variant if product has variants and no variantId was provided
+    if (!input.variantId && product.variants && product.variants.length > 0) {
+      const defaultVariant =
+        product.variants.find((v) => v.status === 'ACTIVE' && v.stock >= input.quantity) ||
+        product.variants[0];
+      if (defaultVariant) {
+        input.variantId = defaultVariant.id;
+      }
     }
 
     let unitPrice = Number(product.price);

@@ -139,7 +139,6 @@ export class OrderService {
     const total = parseFloat((taxableAmount + shipping + tax).toFixed(2));
 
     const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
-
     // 5. Transaction order creation
     const order = await prisma.$transaction(async (tx: any) => {
       const createdOrder = await tx.order.create({
@@ -162,7 +161,7 @@ export class OrderService {
               paymentMethod: input.paymentMethod,
               status: input.paymentMethod === 'COD' ? 'PENDING' : 'PENDING',
               amount: total,
-              transactionReference: input.paymentMethod === 'COD' ? 'COD-CONFIRMED' : null,
+              transactionReference: input.paymentMethod === 'COD' ? 'COD-CONFIRMED' : 'DEMO-PAYMENT',
             },
           },
           statusHistory: {
@@ -179,7 +178,45 @@ export class OrderService {
         },
       });
 
-      // Clear user cart
+      // Stock deduction for ordered items
+      for (const item of cart.items) {
+        if (item.variantId) {
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: { stock: { decrement: item.quantity } },
+          });
+        }
+        await tx.inventory.updateMany({
+          where: {
+            OR: [
+              { variantId: item.variantId || undefined },
+              { productId: item.productId },
+            ],
+          },
+          data: { availableStock: { decrement: item.quantity } },
+        });
+      }
+
+      // Record coupon usage if a valid coupon was applied
+      if (input.couponCode && discount > 0) {
+        const coupon = await tx.coupon.findUnique({ where: { code: input.couponCode } });
+        if (coupon) {
+          await tx.coupon.update({
+            where: { id: coupon.id },
+            data: { usedCount: { increment: 1 } },
+          });
+          await tx.couponUsage.create({
+            data: {
+              couponId: coupon.id,
+              userId,
+              orderId: createdOrder.id,
+              discount,
+            },
+          });
+        }
+      }
+
+      // Clear user cart items
       await tx.cartItem.deleteMany({
         where: { cartId: cart.id },
       });

@@ -80,9 +80,11 @@ export class CustomerService {
         data: { isDefault: false },
       });
     }
+    const { id: _, userId: __, ...updateFields } = data;
+
     return prisma.address.update({
       where: { id: addressId },
-      data,
+      data: updateFields,
     });
   }
 

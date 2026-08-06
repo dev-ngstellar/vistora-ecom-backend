@@ -123,8 +123,10 @@ export class ProductRepository extends BaseRepository<Product, Prisma.ProductDel
       };
     }
 
-    if (status) {
+    if (status && status !== 'ALL') {
       where.status = status as Prisma.EnumProductStatusFilter;
+    } else if (!status) {
+      where.status = { in: ['ACTIVE', 'OUT_OF_STOCK'] };
     }
 
     if (featured !== undefined) {

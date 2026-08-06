@@ -11,6 +11,7 @@ const orderController = new OrderController();
 orderRouter.use(authenticate);
 
 // ==================== CUSTOMER SELF-SERVICE ORDER & PAYMENT ROUTES ====================
+orderRouter.get('/orders/my', asyncHandler(orderController.getMyOrders));
 orderRouter.post('/orders', asyncHandler(orderController.createCustomerOrder));
 orderRouter.post('/payments/verify', asyncHandler(orderController.verifyPayment));
 
