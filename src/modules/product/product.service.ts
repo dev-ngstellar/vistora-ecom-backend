@@ -143,7 +143,7 @@ export class ProductService {
     return this.productRepository.searchAndFilterProducts(filters);
   }
 
-  public async updateProduct(id: string, input: UpdateProductInput): Promise<ProductFullDetails> {
+  public async updateProduct(id: string, input: UpdateProductInput & { images?: ProductImageInput[]; variants?: ProductVariantInput[] }): Promise<ProductFullDetails> {
     const existing = await this.productRepository.findByIdFull(id);
     if (!existing) {
       throw ApiError.notFound(`Product with ID '${id}' not found`);
@@ -166,6 +166,40 @@ export class ProductService {
       if (!category) {
         throw ApiError.notFound(`Category with ID '${input.categoryId}' not found`);
       }
+    }
+
+    // Optional image sync
+    if (input.images && Array.isArray(input.images)) {
+      await prisma.productImage.deleteMany({ where: { productId: id } });
+      await prisma.productImage.createMany({
+        data: input.images.map((img, index) => ({
+          productId: id,
+          imageUrl: img.imageUrl,
+          altText: img.altText || null,
+          isPrimary: img.isPrimary ?? index === 0,
+          sortOrder: img.sortOrder ?? index,
+        })),
+      });
+    }
+
+    // Optional variant sync
+    if (input.variants && Array.isArray(input.variants)) {
+      await prisma.productVariant.deleteMany({ where: { productId: id } });
+      await prisma.productVariant.createMany({
+        data: input.variants.map((v) => ({
+          productId: id,
+          sku: v.sku,
+          barcode: v.barcode || null,
+          color: v.color || null,
+          size: v.size || null,
+          weight: v.weight || null,
+          dimensions: v.dimensions || null,
+          price: v.price,
+          compareAtPrice: v.compareAtPrice || null,
+          stock: v.stock ?? 0,
+          status: v.status,
+        })),
+      });
     }
 
     const updated = await prisma.product.update({
@@ -202,6 +236,54 @@ export class ProductService {
     });
 
     return updated as ProductFullDetails;
+  }
+
+  public async bulkAction(action: string, productIds: string[], targetId?: string): Promise<number> {
+    if (!productIds || productIds.length === 0) {
+      throw ApiError.badRequest('No product IDs provided for bulk action');
+    }
+
+    switch (action) {
+      case 'DELETE': {
+        const res = await prisma.product.updateMany({
+          where: { id: { in: productIds } },
+          data: { deletedAt: new Date() },
+        });
+        return res.count;
+      }
+      case 'ACTIVATE': {
+        const res = await prisma.product.updateMany({
+          where: { id: { in: productIds } },
+          data: { status: 'ACTIVE' },
+        });
+        return res.count;
+      }
+      case 'DEACTIVATE': {
+        const res = await prisma.product.updateMany({
+          where: { id: { in: productIds } },
+          data: { status: 'INACTIVE' },
+        });
+        return res.count;
+      }
+      case 'ASSIGN_CATEGORY': {
+        if (!targetId) throw ApiError.badRequest('Category ID required for category assignment');
+        const res = await prisma.product.updateMany({
+          where: { id: { in: productIds } },
+          data: { categoryId: targetId },
+        });
+        return res.count;
+      }
+      case 'ASSIGN_BRAND': {
+        if (!targetId) throw ApiError.badRequest('Brand ID required for brand assignment');
+        const res = await prisma.product.updateMany({
+          where: { id: { in: productIds } },
+          data: { brandId: targetId },
+        });
+        return res.count;
+      }
+      default:
+        throw ApiError.badRequest(`Unsupported bulk action '${action}'`);
+    }
   }
 
   public async deleteProduct(id: string): Promise<Product> {

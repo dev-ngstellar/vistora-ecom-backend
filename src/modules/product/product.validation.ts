@@ -1,23 +1,29 @@
 import { AttributeType, ProductStatus, ProductVisibility, VariantStatus } from '@prisma/client';
 import { z } from 'zod';
 
+const coercedNumber = z.coerce.number().nonnegative();
+const coercedNullableNumber = z.preprocess(
+  (val) => (val === null || val === '' || val === undefined ? null : Number(val)),
+  z.number().nonnegative().nullable().optional()
+);
+
 const productImageSchema = z.object({
-  imageUrl: z.string().url('Invalid image URL format'),
+  imageUrl: z.string().min(1, 'Image URL or path is required'),
   altText: z.string().nullable().optional(),
   isPrimary: z.boolean().optional().default(false),
   sortOrder: z.number().int().optional().default(0),
 });
 
 const productVariantSchema = z.object({
-  sku: z.string().min(3, 'Variant SKU must be at least 3 characters'),
+  sku: z.string().min(1, 'Variant SKU is required'),
   barcode: z.string().nullable().optional(),
   color: z.string().nullable().optional(),
   size: z.string().nullable().optional(),
-  weight: z.number().nullable().optional(),
+  weight: coercedNullableNumber,
   dimensions: z.string().nullable().optional(),
-  price: z.number().positive('Price must be greater than 0'),
-  compareAtPrice: z.number().positive().nullable().optional(),
-  stock: z.number().int().nonnegative('Stock cannot be negative').default(0),
+  price: coercedNumber.optional().default(0),
+  compareAtPrice: coercedNullableNumber,
+  stock: z.coerce.number().int().nonnegative().optional().default(0),
   status: z.nativeEnum(VariantStatus).optional().default(VariantStatus.ACTIVE),
 });
 
@@ -33,15 +39,15 @@ export const createProductSchema = z.object({
     slug: z.string().optional(),
     shortDescription: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
-    sku: z.string().min(3, 'SKU must be at least 3 characters'),
+    sku: z.string().min(1, 'SKU is required'),
     barcode: z.string().nullable().optional(),
     categoryId: z.string({ required_error: 'Category ID is required' }),
     brandId: z.string().nullable().optional(),
     collectionId: z.string().nullable().optional(),
-    costPrice: z.number().nonnegative().nullable().optional(),
-    price: z.number().positive('Price must be a positive number'),
-    compareAtPrice: z.number().positive().nullable().optional(),
-    taxRate: z.number().nonnegative().nullable().optional(),
+    costPrice: coercedNullableNumber,
+    price: coercedNumber,
+    compareAtPrice: coercedNullableNumber,
+    taxRate: coercedNullableNumber,
     metaTitle: z.string().nullable().optional(),
     metaDescription: z.string().nullable().optional(),
     metaKeywords: z.string().nullable().optional(),
@@ -63,15 +69,15 @@ export const updateProductSchema = z.object({
     slug: z.string().optional(),
     shortDescription: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
-    sku: z.string().min(3).optional(),
+    sku: z.string().min(1).optional(),
     barcode: z.string().nullable().optional(),
     categoryId: z.string().optional(),
     brandId: z.string().nullable().optional(),
     collectionId: z.string().nullable().optional(),
-    costPrice: z.number().nonnegative().nullable().optional(),
-    price: z.number().positive().optional(),
-    compareAtPrice: z.number().positive().nullable().optional(),
-    taxRate: z.number().nonnegative().nullable().optional(),
+    costPrice: coercedNullableNumber,
+    price: coercedNumber.optional(),
+    compareAtPrice: coercedNullableNumber,
+    taxRate: coercedNullableNumber,
     metaTitle: z.string().nullable().optional(),
     metaDescription: z.string().nullable().optional(),
     metaKeywords: z.string().nullable().optional(),

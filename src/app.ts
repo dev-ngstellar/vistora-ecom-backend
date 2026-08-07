@@ -3,6 +3,7 @@ import cors from 'cors';
 import express, { Application } from 'express';
 import helmet from 'helmet';
 import hpp from 'hpp';
+import path from 'path';
 import { env, setupSwagger } from './config';
 import { globalErrorHandler } from './middleware/error.middleware';
 import { notFoundHandler } from './middleware/not-found.middleware';
@@ -53,6 +54,9 @@ export const createApp = (): Application => {
 
   // 5. Cookie Parsing
   app.use(cookieParser());
+
+  // Serve static uploaded files
+  app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 
   // 6. HTTP Request Logging
   if (env.NODE_ENV !== 'test') {

@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.inventoryRouter = void 0;
+const client_1 = require("@prisma/client");
+const express_1 = require("express");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const rbac_middleware_1 = require("../../middleware/rbac.middleware");
+const async_handler_util_1 = require("../../utils/async-handler.util");
+const inventory_controller_1 = require("./inventory.controller");
+const inventoryRouter = (0, express_1.Router)();
+exports.inventoryRouter = inventoryRouter;
+const inventoryController = new inventory_controller_1.InventoryController();
+inventoryRouter.get('/inventory', auth_middleware_1.authenticate, (0, rbac_middleware_1.requireRoles)(client_1.UserRole.SUPER_ADMIN, client_1.UserRole.ADMIN, client_1.UserRole.MANAGER), (0, async_handler_util_1.asyncHandler)(inventoryController.getInventoryList));
+inventoryRouter.post('/inventory/adjust', auth_middleware_1.authenticate, (0, rbac_middleware_1.requireRoles)(client_1.UserRole.SUPER_ADMIN, client_1.UserRole.ADMIN, client_1.UserRole.MANAGER), (0, async_handler_util_1.asyncHandler)(inventoryController.adjustStock));

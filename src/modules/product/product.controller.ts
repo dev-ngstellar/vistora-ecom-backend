@@ -116,4 +116,16 @@ export class ProductController {
       null,
     );
   };
+
+  public bulkAction = async (req: Request, res: Response): Promise<Response> => {
+    const { action, productIds, targetId } = req.body;
+    const affectedCount = await this.productService.bulkAction(action, productIds, targetId);
+
+    return ApiResponseHandler.success(
+      res,
+      HTTP_STATUS.OK,
+      `Bulk action '${action}' completed successfully`,
+      { affectedCount },
+    );
+  };
 }

@@ -259,4 +259,11 @@ productRouter.delete(
   asyncHandler(productController.deleteProductVariant),
 );
 
+productRouter.post(
+  '/products/bulk-action',
+  authenticate,
+  requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
+  asyncHandler(productController.bulkAction),
+);
+
 export { productRouter };

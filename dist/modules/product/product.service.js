@@ -137,6 +137,38 @@ class ProductService {
                 throw api_error_util_1.ApiError.notFound(`Category with ID '${input.categoryId}' not found`);
             }
         }
+        // Optional image sync
+        if (input.images && Array.isArray(input.images)) {
+            await prisma_config_1.prisma.productImage.deleteMany({ where: { productId: id } });
+            await prisma_config_1.prisma.productImage.createMany({
+                data: input.images.map((img, index) => ({
+                    productId: id,
+                    imageUrl: img.imageUrl,
+                    altText: img.altText || null,
+                    isPrimary: img.isPrimary ?? index === 0,
+                    sortOrder: img.sortOrder ?? index,
+                })),
+            });
+        }
+        // Optional variant sync
+        if (input.variants && Array.isArray(input.variants)) {
+            await prisma_config_1.prisma.productVariant.deleteMany({ where: { productId: id } });
+            await prisma_config_1.prisma.productVariant.createMany({
+                data: input.variants.map((v) => ({
+                    productId: id,
+                    sku: v.sku,
+                    barcode: v.barcode || null,
+                    color: v.color || null,
+                    size: v.size || null,
+                    weight: v.weight || null,
+                    dimensions: v.dimensions || null,
+                    price: v.price,
+                    compareAtPrice: v.compareAtPrice || null,
+                    stock: v.stock ?? 0,
+                    status: v.status,
+                })),
+            });
+        }
         const updated = await prisma_config_1.prisma.product.update({
             where: { id },
             data: {
@@ -170,6 +202,54 @@ class ProductService {
             },
         });
         return updated;
+    }
+    async bulkAction(action, productIds, targetId) {
+        if (!productIds || productIds.length === 0) {
+            throw api_error_util_1.ApiError.badRequest('No product IDs provided for bulk action');
+        }
+        switch (action) {
+            case 'DELETE': {
+                const res = await prisma_config_1.prisma.product.updateMany({
+                    where: { id: { in: productIds } },
+                    data: { deletedAt: new Date() },
+                });
+                return res.count;
+            }
+            case 'ACTIVATE': {
+                const res = await prisma_config_1.prisma.product.updateMany({
+                    where: { id: { in: productIds } },
+                    data: { status: 'ACTIVE' },
+                });
+                return res.count;
+            }
+            case 'DEACTIVATE': {
+                const res = await prisma_config_1.prisma.product.updateMany({
+                    where: { id: { in: productIds } },
+                    data: { status: 'INACTIVE' },
+                });
+                return res.count;
+            }
+            case 'ASSIGN_CATEGORY': {
+                if (!targetId)
+                    throw api_error_util_1.ApiError.badRequest('Category ID required for category assignment');
+                const res = await prisma_config_1.prisma.product.updateMany({
+                    where: { id: { in: productIds } },
+                    data: { categoryId: targetId },
+                });
+                return res.count;
+            }
+            case 'ASSIGN_BRAND': {
+                if (!targetId)
+                    throw api_error_util_1.ApiError.badRequest('Brand ID required for brand assignment');
+                const res = await prisma_config_1.prisma.product.updateMany({
+                    where: { id: { in: productIds } },
+                    data: { brandId: targetId },
+                });
+                return res.count;
+            }
+            default:
+                throw api_error_util_1.ApiError.badRequest(`Unsupported bulk action '${action}'`);
+        }
     }
     async deleteProduct(id) {
         const existing = await this.productRepository.findByIdFull(id);

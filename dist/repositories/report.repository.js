@@ -74,7 +74,7 @@ class ReportRepository extends base_repository_1.BaseRepository {
             if (endDate)
                 where.createdAt.lte = endDate;
         }
-        const [totalOrders, completed, pending, cancelled, returned, paymentStats] = await Promise.all([
+        const [totalOrders, completed, pending, cancelled, returned, paymentStats, recentOrdersList] = await Promise.all([
             this.prisma.order.count({ where }),
             this.prisma.order.count({ where: { ...where, status: client_1.OrderStatus.DELIVERED } }),
             this.prisma.order.count({ where: { ...where, status: client_1.OrderStatus.PENDING } }),
@@ -84,13 +84,50 @@ class ReportRepository extends base_repository_1.BaseRepository {
                 by: ['status'],
                 _count: { _all: true },
             }),
+            this.prisma.order.findMany({
+                where,
+                take: 5,
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true,
+                    orderNumber: true,
+                    total: true,
+                    status: true,
+                    createdAt: true,
+                    user: {
+                        select: {
+                            fullName: true,
+                            firstName: true,
+                            lastName: true,
+                            email: true,
+                        },
+                    },
+                    payments: {
+                        select: {
+                            status: true,
+                        },
+                        take: 1,
+                        orderBy: { createdAt: 'desc' },
+                    },
+                },
+            }),
         ]);
+        const recentOrders = recentOrdersList.map((o) => ({
+            id: o.orderNumber || o.id,
+            rawId: o.id,
+            customer: o.user?.fullName || `${o.user?.firstName || ''} ${o.user?.lastName || ''}`.trim() || o.user?.email || 'Customer',
+            amount: Number(o.total),
+            paymentStatus: o.payments[0]?.status || 'PAID',
+            orderStatus: o.status,
+            date: o.createdAt.toISOString(),
+        }));
         return {
             totalOrders,
             completed,
             pending,
             cancelled,
             returned,
+            recentOrders,
             statusBreakdown: [
                 { name: 'Delivered', count: completed, color: '#10B981' },
                 { name: 'Pending', count: pending, color: '#F59E0B' },
@@ -262,7 +299,7 @@ class ReportRepository extends base_repository_1.BaseRepository {
     }
     // ==================== REVIEW REPORT ====================
     async getReviewReport() {
-        const [totalReviews, approvedCount, pendingCount, avgRatingResult, ratingGroups] = await Promise.all([
+        const [totalReviews, approvedCount, pendingCount, avgRatingResult, ratingGroups, recentReviewsList] = await Promise.all([
             this.prisma.review.count(),
             this.prisma.review.count({ where: { status: client_1.ReviewStatus.APPROVED } }),
             this.prisma.review.count({ where: { status: client_1.ReviewStatus.PENDING } }),
@@ -273,6 +310,24 @@ class ReportRepository extends base_repository_1.BaseRepository {
                 by: ['rating'],
                 _count: { _all: true },
             }),
+            this.prisma.review.findMany({
+                take: 10,
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true,
+                    rating: true,
+                    title: true,
+                    comment: true,
+                    status: true,
+                    createdAt: true,
+                    product: {
+                        select: { name: true },
+                    },
+                    user: {
+                        select: { fullName: true, firstName: true, lastName: true },
+                    },
+                },
+            }),
         ]);
         const ratingDistribution = [1, 2, 3, 4, 5].map((star) => {
             const found = ratingGroups.find((g) => g.rating === star);
@@ -281,12 +336,23 @@ class ReportRepository extends base_repository_1.BaseRepository {
                 count: found ? found._count._all : 0,
             };
         });
+        const recentReviews = recentReviewsList.map((r) => ({
+            id: r.id,
+            productName: r.product?.name || 'Product',
+            customerName: r.user?.fullName || `${r.user?.firstName || ''} ${r.user?.lastName || ''}`.trim() || 'Customer',
+            rating: r.rating,
+            title: r.title || '',
+            comment: r.comment || '',
+            status: r.status,
+            createdAt: r.createdAt.toISOString(),
+        }));
         return {
             totalReviews,
             approvedCount,
             pendingCount,
             averageRating: avgRatingResult._avg.rating || 5.0,
             ratingDistribution,
+            recentReviews,
         };
     }
 }

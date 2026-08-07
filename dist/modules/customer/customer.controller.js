@@ -34,5 +34,36 @@ class CustomerController {
         const stats = await this.customerService.getCustomerStats();
         return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.OK, 'Customer statistics retrieved successfully', stats);
     };
+    // ==================== ADDRESS HANDLERS ====================
+    getMyAddresses = async (req, res) => {
+        const userId = req.user?.id;
+        if (!userId)
+            return api_response_util_1.ApiResponseHandler.error(res, http_status_constant_1.HTTP_STATUS.UNAUTHORIZED, 'User authentication required');
+        const addresses = await this.customerService.getMyAddresses(userId);
+        return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.OK, 'Addresses retrieved successfully', addresses);
+    };
+    createAddress = async (req, res) => {
+        const userId = req.user?.id;
+        if (!userId)
+            return api_response_util_1.ApiResponseHandler.error(res, http_status_constant_1.HTTP_STATUS.UNAUTHORIZED, 'User authentication required');
+        const address = await this.customerService.createAddress(userId, req.body);
+        return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.CREATED, 'Address created successfully', address);
+    };
+    updateAddress = async (req, res) => {
+        const userId = req.user?.id;
+        const addressId = req.params['id'];
+        if (!userId)
+            return api_response_util_1.ApiResponseHandler.error(res, http_status_constant_1.HTTP_STATUS.UNAUTHORIZED, 'User authentication required');
+        const updated = await this.customerService.updateAddress(userId, addressId, req.body);
+        return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.OK, 'Address updated successfully', updated);
+    };
+    deleteAddress = async (req, res) => {
+        const userId = req.user?.id;
+        const addressId = req.params['id'];
+        if (!userId)
+            return api_response_util_1.ApiResponseHandler.error(res, http_status_constant_1.HTTP_STATUS.UNAUTHORIZED, 'User authentication required');
+        await this.customerService.deleteAddress(userId, addressId);
+        return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.OK, 'Address deleted successfully', null);
+    };
 }
 exports.CustomerController = CustomerController;

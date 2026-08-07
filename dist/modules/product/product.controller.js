@@ -71,5 +71,10 @@ class ProductController {
         await this.productService.deleteProductVariant(variantId);
         return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.OK, 'Product variant removed successfully', null);
     };
+    bulkAction = async (req, res) => {
+        const { action, productIds, targetId } = req.body;
+        const affectedCount = await this.productService.bulkAction(action, productIds, targetId);
+        return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.OK, `Bulk action '${action}' completed successfully`, { affectedCount });
+    };
 }
 exports.ProductController = ProductController;

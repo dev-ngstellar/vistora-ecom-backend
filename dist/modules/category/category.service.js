@@ -26,6 +26,8 @@ class CategoryService {
             parentId: input.parentId || null,
             description: input.description || null,
             imageUrl: input.imageUrl || null,
+            metaTitle: input.metaTitle || null,
+            metaDescription: input.metaDescription || null,
             status: input.status,
             sortOrder: input.sortOrder ?? 0,
         });

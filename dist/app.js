@@ -9,6 +9,7 @@ const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const helmet_1 = __importDefault(require("helmet"));
 const hpp_1 = __importDefault(require("hpp"));
+const path_1 = __importDefault(require("path"));
 const config_1 = require("./config");
 const error_middleware_1 = require("./middleware/error.middleware");
 const not_found_middleware_1 = require("./middleware/not-found.middleware");
@@ -49,6 +50,8 @@ const createApp = () => {
     app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
     // 5. Cookie Parsing
     app.use((0, cookie_parser_1.default)());
+    // Serve static uploaded files
+    app.use('/uploads', express_1.default.static(path_1.default.join(process.cwd(), 'public/uploads')));
     // 6. HTTP Request Logging
     if (config_1.env.NODE_ENV !== 'test') {
         app.use(request_logger_middleware_1.requestLogger);

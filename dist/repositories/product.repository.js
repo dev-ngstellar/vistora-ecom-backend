@@ -61,8 +61,11 @@ class ProductRepository extends base_repository_1.BaseRepository {
                 ...(maxPrice !== undefined && { lte: maxPrice }),
             };
         }
-        if (status) {
+        if (status && status !== 'ALL') {
             where.status = status;
+        }
+        else if (!status) {
+            where.status = { in: ['ACTIVE', 'OUT_OF_STOCK'] };
         }
         if (featured !== undefined) {
             where.featured = featured;

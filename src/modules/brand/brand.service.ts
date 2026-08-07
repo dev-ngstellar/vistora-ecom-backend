@@ -24,6 +24,7 @@ export class BrandService {
       logoUrl: input.logoUrl || null,
       description: input.description || null,
       website: input.website || null,
+      featured: input.featured ?? false,
       status: input.status,
     });
   }

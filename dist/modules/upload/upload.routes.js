@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.uploadRouter = void 0;
+const express_1 = require("express");
+const async_handler_util_1 = require("../../utils/async-handler.util");
+const upload_controller_1 = require("./upload.controller");
+const uploadRouter = (0, express_1.Router)();
+exports.uploadRouter = uploadRouter;
+const uploadController = new upload_controller_1.UploadController();
+uploadRouter.post('/upload', upload_controller_1.uploadMiddleware.single('file'), (0, async_handler_util_1.asyncHandler)(uploadController.uploadSingle));
+uploadRouter.post('/upload/multiple', upload_controller_1.uploadMiddleware.array('files', 10), (0, async_handler_util_1.asyncHandler)(uploadController.uploadMultiple));

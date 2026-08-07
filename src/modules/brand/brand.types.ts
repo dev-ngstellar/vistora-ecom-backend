@@ -6,6 +6,7 @@ export interface CreateBrandInput {
   logoUrl?: string | null;
   description?: string | null;
   website?: string | null;
+  featured?: boolean;
   status?: BrandStatus;
 }
 
@@ -15,5 +16,6 @@ export interface UpdateBrandInput {
   logoUrl?: string | null;
   description?: string | null;
   website?: string | null;
+  featured?: boolean;
   status?: BrandStatus;
 }

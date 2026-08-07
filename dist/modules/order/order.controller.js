@@ -64,5 +64,24 @@ class OrderController {
         res.setHeader('Content-Disposition', 'attachment; filename="orders-export.csv"');
         res.status(200).send(csvContent);
     };
+    // ==================== CUSTOMER ORDER HANDLERS ====================
+    createCustomerOrder = async (req, res) => {
+        const userId = req.user?.id;
+        if (!userId)
+            return api_response_util_1.ApiResponseHandler.error(res, http_status_constant_1.HTTP_STATUS.UNAUTHORIZED, 'Authentication required');
+        const order = await this.orderService.createCustomerOrder(userId, req.body);
+        return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.CREATED, 'Order placed successfully', order);
+    };
+    getMyOrders = async (req, res) => {
+        const userId = req.user?.id;
+        if (!userId)
+            return api_response_util_1.ApiResponseHandler.error(res, http_status_constant_1.HTTP_STATUS.UNAUTHORIZED, 'Authentication required');
+        const result = await this.orderService.getOrders({ userId, limit: 50 });
+        return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.OK, 'Customer orders retrieved successfully', result.orders, result.meta);
+    };
+    verifyPayment = async (req, res) => {
+        const result = await this.orderService.verifyPayment(req.body);
+        return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.OK, 'Payment verified successfully', result);
+    };
 }
 exports.OrderController = OrderController;

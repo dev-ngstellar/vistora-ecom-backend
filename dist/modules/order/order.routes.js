@@ -11,11 +11,15 @@ const orderRouter = (0, express_1.Router)();
 exports.orderRouter = orderRouter;
 const orderController = new order_controller_1.OrderController();
 orderRouter.use(auth_middleware_1.authenticate);
-orderRouter.use((0, rbac_middleware_1.requireRoles)(client_1.UserRole.SUPER_ADMIN, client_1.UserRole.ADMIN, client_1.UserRole.MANAGER));
-orderRouter.get('/orders/stats', (0, async_handler_util_1.asyncHandler)(orderController.getOrderStats));
-orderRouter.get('/orders/export', (0, async_handler_util_1.asyncHandler)(orderController.exportOrdersCsv));
-orderRouter.get('/orders', (0, async_handler_util_1.asyncHandler)(orderController.getOrders));
+// ==================== CUSTOMER SELF-SERVICE ORDER & PAYMENT ROUTES ====================
+orderRouter.get('/orders/my', (0, async_handler_util_1.asyncHandler)(orderController.getMyOrders));
+orderRouter.post('/orders', (0, async_handler_util_1.asyncHandler)(orderController.createCustomerOrder));
+orderRouter.post('/payments/verify', (0, async_handler_util_1.asyncHandler)(orderController.verifyPayment));
+// ==================== ADMIN MANAGEMENT ROUTES ====================
+orderRouter.get('/orders/stats', (0, rbac_middleware_1.requireRoles)(client_1.UserRole.SUPER_ADMIN, client_1.UserRole.ADMIN, client_1.UserRole.MANAGER), (0, async_handler_util_1.asyncHandler)(orderController.getOrderStats));
+orderRouter.get('/orders/export', (0, rbac_middleware_1.requireRoles)(client_1.UserRole.SUPER_ADMIN, client_1.UserRole.ADMIN, client_1.UserRole.MANAGER), (0, async_handler_util_1.asyncHandler)(orderController.exportOrdersCsv));
+orderRouter.get('/orders', (0, rbac_middleware_1.requireRoles)(client_1.UserRole.SUPER_ADMIN, client_1.UserRole.ADMIN, client_1.UserRole.MANAGER), (0, async_handler_util_1.asyncHandler)(orderController.getOrders));
 orderRouter.get('/orders/:id', (0, async_handler_util_1.asyncHandler)(orderController.getOrderById));
-orderRouter.patch('/orders/:id/status', (0, async_handler_util_1.asyncHandler)(orderController.updateOrderStatus));
+orderRouter.patch('/orders/:id/status', (0, rbac_middleware_1.requireRoles)(client_1.UserRole.SUPER_ADMIN, client_1.UserRole.ADMIN, client_1.UserRole.MANAGER), (0, async_handler_util_1.asyncHandler)(orderController.updateOrderStatus));
 orderRouter.post('/orders/:id/cancel', (0, async_handler_util_1.asyncHandler)(orderController.cancelOrder));
 orderRouter.get('/orders/:id/invoice', (0, async_handler_util_1.asyncHandler)(orderController.getInvoice));

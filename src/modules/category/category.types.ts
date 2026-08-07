@@ -6,6 +6,8 @@ export interface CreateCategoryInput {
   parentId?: string | null;
   description?: string | null;
   imageUrl?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
   status?: CategoryStatus;
   sortOrder?: number;
 }
@@ -16,6 +18,8 @@ export interface UpdateCategoryInput {
   parentId?: string | null;
   description?: string | null;
   imageUrl?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
   status?: CategoryStatus;
   sortOrder?: number;
 }
