@@ -47,7 +47,20 @@ class ProductRepository extends base_repository_1.BaseRepository {
             ];
         }
         if (categoryId) {
-            where.categoryId = categoryId;
+            const targetCat = await this.prisma.category.findFirst({
+                where: {
+                    OR: [{ id: categoryId }, { slug: categoryId.toLowerCase() }],
+                },
+                include: { children: true },
+            });
+            if (targetCat) {
+                const childIds = targetCat.children?.map((c) => c.id) || [];
+                const allCatIds = [targetCat.id, ...childIds];
+                where.categoryId = { in: allCatIds };
+            }
+            else {
+                where.categoryId = categoryId;
+            }
         }
         if (brandId) {
             where.brandId = brandId;
