@@ -76,6 +76,8 @@ class OrderRepository extends base_repository_1.BaseRepository {
                                     images: {
                                         take: 1,
                                     },
+                                    brand: true,
+                                    category: true,
                                 },
                             },
                             variant: true,
@@ -119,6 +121,8 @@ class OrderRepository extends base_repository_1.BaseRepository {
                         product: {
                             include: {
                                 images: true,
+                                brand: true,
+                                category: true,
                             },
                         },
                         variant: true,

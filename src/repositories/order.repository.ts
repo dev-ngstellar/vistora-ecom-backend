@@ -96,6 +96,8 @@ export class OrderRepository extends BaseRepository<Order, Prisma.OrderDelegate>
                   images: {
                     take: 1,
                   },
+                  brand: true,
+                  category: true,
                 },
               },
               variant: true,
@@ -141,6 +143,8 @@ export class OrderRepository extends BaseRepository<Order, Prisma.OrderDelegate>
             product: {
               include: {
                 images: true,
+                brand: true,
+                category: true,
               },
             },
             variant: true,
