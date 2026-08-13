@@ -20,6 +20,7 @@ class BrandService {
             logoUrl: input.logoUrl || null,
             description: input.description || null,
             website: input.website || null,
+            address: input.address || null,
             featured: input.featured ?? false,
             status: input.status,
         });

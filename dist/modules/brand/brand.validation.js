@@ -10,6 +10,7 @@ exports.createBrandSchema = zod_1.z.object({
         logoUrl: zod_1.z.string().url('Invalid logo URL format').nullable().optional(),
         description: zod_1.z.string().nullable().optional(),
         website: zod_1.z.string().url('Invalid website URL format').nullable().optional(),
+        address: zod_1.z.string().max(255).nullable().optional(),
         status: zod_1.z.nativeEnum(client_1.BrandStatus).optional().default(client_1.BrandStatus.ACTIVE),
     }),
 });
@@ -23,6 +24,7 @@ exports.updateBrandSchema = zod_1.z.object({
         logoUrl: zod_1.z.string().url('Invalid logo URL format').nullable().optional(),
         description: zod_1.z.string().nullable().optional(),
         website: zod_1.z.string().url('Invalid website URL format').nullable().optional(),
+        address: zod_1.z.string().max(255).nullable().optional(),
         status: zod_1.z.nativeEnum(client_1.BrandStatus).optional(),
     }),
 });

@@ -8,6 +8,7 @@ export const createBrandSchema = z.object({
     logoUrl: z.string().url('Invalid logo URL format').nullable().optional(),
     description: z.string().nullable().optional(),
     website: z.string().url('Invalid website URL format').nullable().optional(),
+    address: z.string().max(255).nullable().optional(),
     status: z.nativeEnum(BrandStatus).optional().default(BrandStatus.ACTIVE),
   }),
 });
@@ -22,6 +23,7 @@ export const updateBrandSchema = z.object({
     logoUrl: z.string().url('Invalid logo URL format').nullable().optional(),
     description: z.string().nullable().optional(),
     website: z.string().url('Invalid website URL format').nullable().optional(),
+    address: z.string().max(255).nullable().optional(),
     status: z.nativeEnum(BrandStatus).optional(),
   }),
 });
