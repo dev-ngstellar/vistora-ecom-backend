@@ -28,12 +28,35 @@ class InventoryRepository extends base_repository_1.BaseRepository {
         for (const product of products) {
             if (product.variants && product.variants.length > 0) {
                 for (const variant of product.variants) {
+                    // 1. Try to find by variantId
                     let inv = await this.prisma.inventory.findUnique({
                         where: { variantId: variant.id },
                         include: {
                             stockMovements: { orderBy: { createdAt: 'desc' }, take: 5 },
                         },
                     });
+                    // 2. If not found, try to find by SKU (reconcile variant upgrades/SKU matching)
+                    if (!inv) {
+                        inv = await this.prisma.inventory.findUnique({
+                            where: { sku: variant.sku },
+                            include: {
+                                stockMovements: { orderBy: { createdAt: 'desc' }, take: 5 },
+                            },
+                        });
+                        if (inv) {
+                            inv = await this.prisma.inventory.update({
+                                where: { id: inv.id },
+                                data: {
+                                    variantId: variant.id,
+                                    productId: product.id,
+                                },
+                                include: {
+                                    stockMovements: { orderBy: { createdAt: 'desc' }, take: 5 },
+                                },
+                            });
+                        }
+                    }
+                    // 3. If still not found, create a new one
                     if (!inv) {
                         inv = await this.prisma.inventory.create({
                             data: {
@@ -45,6 +68,16 @@ class InventoryRepository extends base_repository_1.BaseRepository {
                                 soldStock: 0,
                                 minimumStock: 10,
                             },
+                            include: {
+                                stockMovements: { orderBy: { createdAt: 'desc' }, take: 5 },
+                            },
+                        });
+                    }
+                    else if (inv.sku !== variant.sku) {
+                        // Reconcile: variant's SKU has changed, update the inventory SKU to match
+                        inv = await this.prisma.inventory.update({
+                            where: { id: inv.id },
+                            data: { sku: variant.sku },
                             include: {
                                 stockMovements: { orderBy: { createdAt: 'desc' }, take: 5 },
                             },
@@ -75,12 +108,35 @@ class InventoryRepository extends base_repository_1.BaseRepository {
                 }
             }
             else {
+                // 1. Try to find by product and variantId null
                 let inv = await this.prisma.inventory.findFirst({
                     where: { productId: product.id, variantId: null },
                     include: {
                         stockMovements: { orderBy: { createdAt: 'desc' }, take: 5 },
                     },
                 });
+                // 2. If not found, try to find by SKU
+                if (!inv) {
+                    inv = await this.prisma.inventory.findUnique({
+                        where: { sku: product.sku },
+                        include: {
+                            stockMovements: { orderBy: { createdAt: 'desc' }, take: 5 },
+                        },
+                    });
+                    if (inv) {
+                        inv = await this.prisma.inventory.update({
+                            where: { id: inv.id },
+                            data: {
+                                productId: product.id,
+                                variantId: null,
+                            },
+                            include: {
+                                stockMovements: { orderBy: { createdAt: 'desc' }, take: 5 },
+                            },
+                        });
+                    }
+                }
+                // 3. If still not found, create a new one
                 if (!inv) {
                     inv = await this.prisma.inventory.create({
                         data: {
@@ -92,6 +148,15 @@ class InventoryRepository extends base_repository_1.BaseRepository {
                             soldStock: 0,
                             minimumStock: 10,
                         },
+                        include: {
+                            stockMovements: { orderBy: { createdAt: 'desc' }, take: 5 },
+                        },
+                    });
+                }
+                else if (inv.sku !== product.sku) {
+                    inv = await this.prisma.inventory.update({
+                        where: { id: inv.id },
+                        data: { sku: product.sku },
                         include: {
                             stockMovements: { orderBy: { createdAt: 'desc' }, take: 5 },
                         },
