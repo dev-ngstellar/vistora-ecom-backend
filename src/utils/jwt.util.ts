@@ -40,6 +40,15 @@ export class JwtUtil {
       if (error instanceof jwt.TokenExpiredError) {
         throw ApiError.unauthorized('Access token has expired');
       }
+      // Fallback in development mode to decode production JWTs without signature verification
+      if (env.NODE_ENV === 'development') {
+        try {
+          const decoded = jwt.decode(token) as TokenPayload;
+          if (decoded && decoded.exp && decoded.exp * 1000 > Date.now()) {
+            return decoded;
+          }
+        } catch (_) {}
+      }
       throw ApiError.unauthorized('Invalid access token');
     }
   }
