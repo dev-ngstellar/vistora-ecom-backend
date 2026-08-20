@@ -61,47 +61,99 @@ class OrderService {
     }
     // ==================== CUSTOMER ORDER PLACEMENT ====================
     async createCustomerOrder(userId, input) {
-        // 1. Fetch user cart
-        const cart = await prisma_config_1.prisma.cart.findUnique({
-            where: { userId },
-            include: {
-                items: {
-                    include: {
-                        product: { include: { images: true } },
-                        variant: true,
+        let orderItemsData = [];
+        let subtotal = 0;
+        let itemsToDeduct = [];
+        if (input.items && input.items.length > 0) {
+            // 1. Process custom buy-now items
+            const itemsToProcess = [];
+            for (const item of input.items) {
+                const product = await prisma_config_1.prisma.product.findUnique({
+                    where: { id: item.productId },
+                    include: { images: true }
+                });
+                if (!product) {
+                    throw api_error_util_1.ApiError.notFound(`Product with ID ${item.productId} not found`);
+                }
+                let variant = null;
+                if (item.variantId) {
+                    variant = await prisma_config_1.prisma.productVariant.findUnique({
+                        where: { id: item.variantId }
+                    });
+                    if (!variant) {
+                        throw api_error_util_1.ApiError.notFound(`Variant with ID ${item.variantId} not found`);
+                    }
+                }
+                itemsToProcess.push({ item, product, variant });
+            }
+            orderItemsData = itemsToProcess.map(({ item, product, variant }) => {
+                const price = Number(variant ? variant.price : product.price);
+                const itemTotal = price * item.quantity;
+                subtotal += itemTotal;
+                return {
+                    productId: item.productId,
+                    variantId: item.variantId || null,
+                    productName: product.name,
+                    sku: variant ? variant.sku : product.sku,
+                    quantity: item.quantity,
+                    unitPrice: price,
+                    discount: 0,
+                    tax: 0,
+                    total: itemTotal,
+                };
+            });
+            itemsToDeduct = input.items.map(item => ({
+                productId: item.productId,
+                variantId: item.variantId || null,
+                quantity: item.quantity
+            }));
+        }
+        else {
+            // 2. Fetch user cart
+            const cart = await prisma_config_1.prisma.cart.findUnique({
+                where: { userId },
+                include: {
+                    items: {
+                        include: {
+                            product: { include: { images: true } },
+                            variant: true,
+                        },
                     },
                 },
-            },
-        });
-        if (!cart || cart.items.length === 0) {
-            throw api_error_util_1.ApiError.badRequest('Shopping cart is empty');
+            });
+            if (!cart || cart.items.length === 0) {
+                throw api_error_util_1.ApiError.badRequest('Shopping cart is empty');
+            }
+            orderItemsData = cart.items.map((item) => {
+                const price = item.variant ? item.variant.price : item.product.price;
+                const itemTotal = price * item.quantity;
+                subtotal += itemTotal;
+                return {
+                    productId: item.productId,
+                    variantId: item.variantId || null,
+                    productName: item.product.name,
+                    sku: item.variant ? item.variant.sku : item.product.sku,
+                    quantity: item.quantity,
+                    unitPrice: price,
+                    discount: 0,
+                    tax: 0,
+                    total: itemTotal,
+                };
+            });
+            itemsToDeduct = cart.items.map((item) => ({
+                productId: item.productId,
+                variantId: item.variantId || null,
+                quantity: item.quantity
+            }));
         }
-        // 2. Verify address
+        // Verify address
         const address = await prisma_config_1.prisma.address.findFirst({
             where: { id: input.addressId, userId },
         });
         if (!address) {
             throw api_error_util_1.ApiError.notFound('Delivery address not found');
         }
-        // 3. Compute calculations
-        let subtotal = 0;
-        const orderItemsData = cart.items.map((item) => {
-            const price = item.variant ? item.variant.price : item.product.price;
-            const itemTotal = price * item.quantity;
-            subtotal += itemTotal;
-            return {
-                productId: item.productId,
-                variantId: item.variantId || null,
-                productName: item.product.name,
-                sku: item.variant ? item.variant.sku : item.product.sku,
-                quantity: item.quantity,
-                unitPrice: price,
-                discount: 0,
-                tax: 0,
-                total: itemTotal,
-            };
-        });
-        // 4. Compute discount
+        // Compute discount
         let discount = 0;
         if (input.couponCode) {
             const coupon = await prisma_config_1.prisma.coupon.findUnique({ where: { code: input.couponCode } });
@@ -120,7 +172,7 @@ class OrderService {
         const tax = parseFloat((taxableAmount * 0.05).toFixed(2)); // 5% tax
         const total = parseFloat((taxableAmount + shipping + tax).toFixed(2));
         const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
-        // 5. Transaction order creation
+        // Transaction order creation
         const order = await prisma_config_1.prisma.$transaction(async (tx) => {
             const createdOrder = await tx.order.create({
                 data: {
@@ -140,7 +192,7 @@ class OrderService {
                     payments: {
                         create: {
                             paymentMethod: input.paymentMethod,
-                            status: input.paymentMethod === 'COD' ? 'PENDING' : 'PENDING',
+                            status: 'PENDING',
                             amount: total,
                             transactionReference: input.paymentMethod === 'COD' ? 'COD-CONFIRMED' : 'DEMO-PAYMENT',
                         },
@@ -159,7 +211,7 @@ class OrderService {
                 },
             });
             // Stock deduction for ordered items
-            for (const item of cart.items) {
+            for (const item of itemsToDeduct) {
                 if (item.variantId) {
                     await tx.productVariant.update({
                         where: { id: item.variantId },
@@ -194,10 +246,15 @@ class OrderService {
                     });
                 }
             }
-            // Clear user cart items
-            await tx.cartItem.deleteMany({
-                where: { cartId: cart.id },
-            });
+            // Clear user cart items if not a custom Buy Now order
+            if (!input.items || input.items.length === 0) {
+                const cart = await tx.cart.findUnique({ where: { userId } });
+                if (cart) {
+                    await tx.cartItem.deleteMany({
+                        where: { cartId: cart.id },
+                    });
+                }
+            }
             return createdOrder;
         });
         return order;

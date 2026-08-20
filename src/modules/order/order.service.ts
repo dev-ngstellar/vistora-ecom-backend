@@ -73,25 +73,103 @@ export class OrderService {
     paymentMethod: 'RAZORPAY' | 'STRIPE' | 'COD';
     couponCode?: string | null;
     notes?: string;
+    items?: Array<{ productId: string; variantId?: string | null; quantity: number }>;
   }) {
-    // 1. Fetch user cart
-    const cart = await prisma.cart.findUnique({
-      where: { userId },
-      include: {
-        items: {
-          include: {
-            product: { include: { images: true } },
-            variant: true,
+    let orderItemsData: any[] = [];
+    let subtotal = 0;
+    let itemsToDeduct: Array<{ productId: string; variantId: string | null; quantity: number }> = [];
+
+    if (input.items && input.items.length > 0) {
+      // 1. Process custom buy-now items
+      const itemsToProcess = [];
+      for (const item of input.items) {
+        const product = await prisma.product.findUnique({
+          where: { id: item.productId },
+          include: { images: true }
+        });
+        if (!product) {
+          throw ApiError.notFound(`Product with ID ${item.productId} not found`);
+        }
+        let variant = null;
+        if (item.variantId) {
+          variant = await prisma.productVariant.findUnique({
+            where: { id: item.variantId }
+          });
+          if (!variant) {
+            throw ApiError.notFound(`Variant with ID ${item.variantId} not found`);
+          }
+        }
+        itemsToProcess.push({ item, product, variant });
+      }
+
+      orderItemsData = itemsToProcess.map(({ item, product, variant }) => {
+        const price = Number(variant ? variant.price : product.price);
+        const itemTotal = price * item.quantity;
+        subtotal += itemTotal;
+
+        return {
+          productId: item.productId,
+          variantId: item.variantId || null,
+          productName: product.name,
+          sku: variant ? variant.sku : product.sku,
+          quantity: item.quantity,
+          unitPrice: price,
+          discount: 0,
+          tax: 0,
+          total: itemTotal,
+        };
+      });
+
+      itemsToDeduct = input.items.map(item => ({
+        productId: item.productId,
+        variantId: item.variantId || null,
+        quantity: item.quantity
+      }));
+
+    } else {
+      // 2. Fetch user cart
+      const cart = await prisma.cart.findUnique({
+        where: { userId },
+        include: {
+          items: {
+            include: {
+              product: { include: { images: true } },
+              variant: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!cart || cart.items.length === 0) {
-      throw ApiError.badRequest('Shopping cart is empty');
+      if (!cart || cart.items.length === 0) {
+        throw ApiError.badRequest('Shopping cart is empty');
+      }
+
+      orderItemsData = cart.items.map((item: any) => {
+        const price = item.variant ? item.variant.price : item.product.price;
+        const itemTotal = price * item.quantity;
+        subtotal += itemTotal;
+
+        return {
+          productId: item.productId,
+          variantId: item.variantId || null,
+          productName: item.product.name,
+          sku: item.variant ? item.variant.sku : item.product.sku,
+          quantity: item.quantity,
+          unitPrice: price,
+          discount: 0,
+          tax: 0,
+          total: itemTotal,
+        };
+      });
+
+      itemsToDeduct = cart.items.map((item: any) => ({
+        productId: item.productId,
+        variantId: item.variantId || null,
+        quantity: item.quantity
+      }));
     }
 
-    // 2. Verify address
+    // Verify address
     const address = await prisma.address.findFirst({
       where: { id: input.addressId, userId },
     });
@@ -99,27 +177,7 @@ export class OrderService {
       throw ApiError.notFound('Delivery address not found');
     }
 
-    // 3. Compute calculations
-    let subtotal = 0;
-    const orderItemsData = cart.items.map((item: any) => {
-      const price = item.variant ? item.variant.price : item.product.price;
-      const itemTotal = price * item.quantity;
-      subtotal += itemTotal;
-
-      return {
-        productId: item.productId,
-        variantId: item.variantId || null,
-        productName: item.product.name,
-        sku: item.variant ? item.variant.sku : item.product.sku,
-        quantity: item.quantity,
-        unitPrice: price,
-        discount: 0,
-        tax: 0,
-        total: itemTotal,
-      };
-    });
-
-    // 4. Compute discount
+    // Compute discount
     let discount = 0;
     if (input.couponCode) {
       const coupon = await prisma.coupon.findUnique({ where: { code: input.couponCode } });
@@ -139,7 +197,8 @@ export class OrderService {
     const total = parseFloat((taxableAmount + shipping + tax).toFixed(2));
 
     const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
-    // 5. Transaction order creation
+    
+    // Transaction order creation
     const order = await prisma.$transaction(async (tx: any) => {
       const createdOrder = await tx.order.create({
         data: {
@@ -159,7 +218,7 @@ export class OrderService {
           payments: {
             create: {
               paymentMethod: input.paymentMethod,
-              status: input.paymentMethod === 'COD' ? 'PENDING' : 'PENDING',
+              status: 'PENDING',
               amount: total,
               transactionReference: input.paymentMethod === 'COD' ? 'COD-CONFIRMED' : 'DEMO-PAYMENT',
             },
@@ -179,7 +238,7 @@ export class OrderService {
       });
 
       // Stock deduction for ordered items
-      for (const item of cart.items) {
+      for (const item of itemsToDeduct) {
         if (item.variantId) {
           await tx.productVariant.update({
             where: { id: item.variantId },
@@ -216,10 +275,15 @@ export class OrderService {
         }
       }
 
-      // Clear user cart items
-      await tx.cartItem.deleteMany({
-        where: { cartId: cart.id },
-      });
+      // Clear user cart items if not a custom Buy Now order
+      if (!input.items || input.items.length === 0) {
+        const cart = await tx.cart.findUnique({ where: { userId } });
+        if (cart) {
+          await tx.cartItem.deleteMany({
+            where: { cartId: cart.id },
+          });
+        }
+      }
 
       return createdOrder;
     });

@@ -35,11 +35,11 @@ export class ProductService {
   }
 
   public async createProduct(input: CreateProductInput): Promise<ProductFullDetails> {
-    const slug = input.slug ? this.slugify(input.slug) : this.slugify(input.name);
+    let slug = input.slug ? this.slugify(input.slug) : this.slugify(input.name);
 
     const existingSlug = await this.productRepository.findBySlug(slug);
     if (existingSlug) {
-      throw ApiError.conflict(`Product with slug '${slug}' already exists`);
+      slug = `${slug}-${Date.now().toString(36)}`;
     }
 
     const category = await this.categoryRepository.findByIdActive(input.categoryId);
@@ -95,12 +95,14 @@ export class ProductService {
             sku: v.sku,
             barcode: v.barcode || null,
             color: v.color || null,
+            colorHex: (v as any).colorHex || null,
             size: v.size || null,
             weight: v.weight || null,
             dimensions: v.dimensions || null,
             price: v.price,
             compareAtPrice: v.compareAtPrice || null,
             stock: v.stock ?? 0,
+            imageUrl: (v as any).imageUrl || ((v as any).imageUrls?.[0] || null),
             status: v.status,
           })),
         },
@@ -191,13 +193,15 @@ export class ProductService {
           sku: v.sku,
           barcode: v.barcode || null,
           color: v.color || null,
+          colorHex: (v as any).colorHex || null,
           size: v.size || null,
           weight: v.weight || null,
           dimensions: v.dimensions || null,
           price: v.price,
           compareAtPrice: v.compareAtPrice || null,
           stock: v.stock ?? 0,
-          status: v.status,
+          imageUrl: (v as any).imageUrl || ((v as any).imageUrls?.[0] || null),
+          status: v.status || 'ACTIVE',
         })),
       });
     }
