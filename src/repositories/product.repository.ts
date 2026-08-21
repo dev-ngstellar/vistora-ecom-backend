@@ -50,7 +50,10 @@ export class ProductRepository extends BaseRepository<Product, Prisma.ProductDel
         brand: true,
         collection: true,
         images: { orderBy: { sortOrder: 'asc' } },
-        variants: { orderBy: { price: 'asc' } },
+        variants: {
+          orderBy: { price: 'asc' },
+          include: { images: { orderBy: { sortOrder: 'asc' } } },
+        },
         attributes: true,
       },
     }) as Promise<ProductFullDetails | null>;
@@ -64,7 +67,10 @@ export class ProductRepository extends BaseRepository<Product, Prisma.ProductDel
         brand: true,
         collection: true,
         images: { orderBy: { sortOrder: 'asc' } },
-        variants: { orderBy: { price: 'asc' } },
+        variants: {
+          orderBy: { price: 'asc' },
+          include: { images: { orderBy: { sortOrder: 'asc' } } },
+        },
         attributes: true,
       },
     }) as Promise<ProductFullDetails | null>;
@@ -186,7 +192,10 @@ export class ProductRepository extends BaseRepository<Product, Prisma.ProductDel
           brand: true,
           collection: true,
           images: { orderBy: { sortOrder: 'asc' } },
-          variants: { orderBy: { price: 'asc' } },
+          variants: {
+            orderBy: { price: 'asc' },
+            include: { images: { orderBy: { sortOrder: 'asc' } } },
+          },
           attributes: true,
         },
       }) as Promise<ProductFullDetails[]>,

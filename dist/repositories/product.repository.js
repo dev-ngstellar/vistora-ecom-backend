@@ -16,7 +16,10 @@ class ProductRepository extends base_repository_1.BaseRepository {
                 brand: true,
                 collection: true,
                 images: { orderBy: { sortOrder: 'asc' } },
-                variants: { orderBy: { price: 'asc' } },
+                variants: {
+                    orderBy: { price: 'asc' },
+                    include: { images: { orderBy: { sortOrder: 'asc' } } },
+                },
                 attributes: true,
             },
         });
@@ -29,7 +32,10 @@ class ProductRepository extends base_repository_1.BaseRepository {
                 brand: true,
                 collection: true,
                 images: { orderBy: { sortOrder: 'asc' } },
-                variants: { orderBy: { price: 'asc' } },
+                variants: {
+                    orderBy: { price: 'asc' },
+                    include: { images: { orderBy: { sortOrder: 'asc' } } },
+                },
                 attributes: true,
             },
         });
@@ -119,7 +125,10 @@ class ProductRepository extends base_repository_1.BaseRepository {
                     brand: true,
                     collection: true,
                     images: { orderBy: { sortOrder: 'asc' } },
-                    variants: { orderBy: { price: 'asc' } },
+                    variants: {
+                        orderBy: { price: 'asc' },
+                        include: { images: { orderBy: { sortOrder: 'asc' } } },
+                    },
                     attributes: true,
                 },
             }),

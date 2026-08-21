@@ -17,6 +17,9 @@ export interface ProductVariantInput {
   price: number;
   compareAtPrice?: number | null;
   stock: number;
+  imageUrl?: string | null;
+  imageUrls?: string[];
+  images?: ProductImageInput[];
   status?: VariantStatus;
 }
 

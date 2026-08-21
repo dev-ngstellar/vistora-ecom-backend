@@ -91,20 +91,34 @@ export class ProductService {
           })),
         },
         variants: {
-          create: input.variants?.map((v) => ({
-            sku: v.sku,
-            barcode: v.barcode || null,
-            color: v.color || null,
-            colorHex: (v as any).colorHex || null,
-            size: v.size || null,
-            weight: v.weight || null,
-            dimensions: v.dimensions || null,
-            price: v.price,
-            compareAtPrice: v.compareAtPrice || null,
-            stock: v.stock ?? 0,
-            imageUrl: (v as any).imageUrl || ((v as any).imageUrls?.[0] || null),
-            status: v.status,
-          })),
+          create: input.variants?.map((v) => {
+            const vUrls = (v as any).imageUrls && (v as any).imageUrls.length > 0
+              ? (v as any).imageUrls
+              : (v as any).imageUrl
+                ? [(v as any).imageUrl]
+                : [];
+            return {
+              sku: v.sku,
+              barcode: v.barcode || null,
+              color: v.color || null,
+              colorHex: (v as any).colorHex || null,
+              size: v.size || null,
+              weight: v.weight || null,
+              dimensions: v.dimensions || null,
+              price: v.price,
+              compareAtPrice: v.compareAtPrice || null,
+              stock: v.stock ?? 0,
+              imageUrl: vUrls[0] || null,
+              status: v.status,
+              images: vUrls.length > 0 ? {
+                create: vUrls.map((url: string, imgIdx: number) => ({
+                  imageUrl: url,
+                  isPrimary: imgIdx === 0,
+                  sortOrder: imgIdx,
+                })),
+              } : undefined,
+            };
+          }),
         },
         attributes: {
           create: input.attributes?.map((attr) => ({
@@ -121,7 +135,10 @@ export class ProductService {
         brand: true,
         collection: true,
         images: { orderBy: { sortOrder: 'asc' } },
-        variants: { orderBy: { price: 'asc' } },
+        variants: {
+          orderBy: { price: 'asc' },
+          include: { images: { orderBy: { sortOrder: 'asc' } } },
+        },
         attributes: true,
       },
     });
@@ -187,23 +204,38 @@ export class ProductService {
     // Optional variant sync
     if (input.variants && Array.isArray(input.variants)) {
       await prisma.productVariant.deleteMany({ where: { productId: id } });
-      await prisma.productVariant.createMany({
-        data: input.variants.map((v) => ({
-          productId: id,
-          sku: v.sku,
-          barcode: v.barcode || null,
-          color: v.color || null,
-          colorHex: (v as any).colorHex || null,
-          size: v.size || null,
-          weight: v.weight || null,
-          dimensions: v.dimensions || null,
-          price: v.price,
-          compareAtPrice: v.compareAtPrice || null,
-          stock: v.stock ?? 0,
-          imageUrl: (v as any).imageUrl || ((v as any).imageUrls?.[0] || null),
-          status: v.status || 'ACTIVE',
-        })),
-      });
+      for (const v of input.variants) {
+        const vUrls = (v as any).imageUrls && (v as any).imageUrls.length > 0
+          ? (v as any).imageUrls
+          : (v as any).imageUrl
+            ? [(v as any).imageUrl]
+            : [];
+
+        await prisma.productVariant.create({
+          data: {
+            productId: id,
+            sku: v.sku,
+            barcode: v.barcode || null,
+            color: v.color || null,
+            colorHex: (v as any).colorHex || null,
+            size: v.size || null,
+            weight: v.weight || null,
+            dimensions: v.dimensions || null,
+            price: v.price,
+            compareAtPrice: v.compareAtPrice || null,
+            stock: v.stock ?? 0,
+            imageUrl: vUrls[0] || null,
+            status: v.status || 'ACTIVE',
+            images: vUrls.length > 0 ? {
+              create: vUrls.map((url: string, imgIdx: number) => ({
+                imageUrl: url,
+                isPrimary: imgIdx === 0,
+                sortOrder: imgIdx,
+              })),
+            } : undefined,
+          },
+        });
+      }
     }
 
     const updated = await prisma.product.update({

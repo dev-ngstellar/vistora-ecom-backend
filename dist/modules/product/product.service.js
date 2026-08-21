@@ -19,10 +19,10 @@ class ProductService {
         this.collectionRepository = collectionRepository;
     }
     async createProduct(input) {
-        const slug = input.slug ? this.slugify(input.slug) : this.slugify(input.name);
+        let slug = input.slug ? this.slugify(input.slug) : this.slugify(input.name);
         const existingSlug = await this.productRepository.findBySlug(slug);
         if (existingSlug) {
-            throw api_error_util_1.ApiError.conflict(`Product with slug '${slug}' already exists`);
+            slug = `${slug}-${Date.now().toString(36)}`;
         }
         const category = await this.categoryRepository.findByIdActive(input.categoryId);
         if (!category) {
@@ -70,18 +70,34 @@ class ProductService {
                     })),
                 },
                 variants: {
-                    create: input.variants?.map((v) => ({
-                        sku: v.sku,
-                        barcode: v.barcode || null,
-                        color: v.color || null,
-                        size: v.size || null,
-                        weight: v.weight || null,
-                        dimensions: v.dimensions || null,
-                        price: v.price,
-                        compareAtPrice: v.compareAtPrice || null,
-                        stock: v.stock ?? 0,
-                        status: v.status,
-                    })),
+                    create: input.variants?.map((v) => {
+                        const vUrls = v.imageUrls && v.imageUrls.length > 0
+                            ? v.imageUrls
+                            : v.imageUrl
+                                ? [v.imageUrl]
+                                : [];
+                        return {
+                            sku: v.sku,
+                            barcode: v.barcode || null,
+                            color: v.color || null,
+                            colorHex: v.colorHex || null,
+                            size: v.size || null,
+                            weight: v.weight || null,
+                            dimensions: v.dimensions || null,
+                            price: v.price,
+                            compareAtPrice: v.compareAtPrice || null,
+                            stock: v.stock ?? 0,
+                            imageUrl: vUrls[0] || null,
+                            status: v.status,
+                            images: vUrls.length > 0 ? {
+                                create: vUrls.map((url, imgIdx) => ({
+                                    imageUrl: url,
+                                    isPrimary: imgIdx === 0,
+                                    sortOrder: imgIdx,
+                                })),
+                            } : undefined,
+                        };
+                    }),
                 },
                 attributes: {
                     create: input.attributes?.map((attr) => ({
@@ -98,7 +114,10 @@ class ProductService {
                 brand: true,
                 collection: true,
                 images: { orderBy: { sortOrder: 'asc' } },
-                variants: { orderBy: { price: 'asc' } },
+                variants: {
+                    orderBy: { price: 'asc' },
+                    include: { images: { orderBy: { sortOrder: 'asc' } } },
+                },
                 attributes: true,
             },
         });
@@ -153,21 +172,37 @@ class ProductService {
         // Optional variant sync
         if (input.variants && Array.isArray(input.variants)) {
             await prisma_config_1.prisma.productVariant.deleteMany({ where: { productId: id } });
-            await prisma_config_1.prisma.productVariant.createMany({
-                data: input.variants.map((v) => ({
-                    productId: id,
-                    sku: v.sku,
-                    barcode: v.barcode || null,
-                    color: v.color || null,
-                    size: v.size || null,
-                    weight: v.weight || null,
-                    dimensions: v.dimensions || null,
-                    price: v.price,
-                    compareAtPrice: v.compareAtPrice || null,
-                    stock: v.stock ?? 0,
-                    status: v.status,
-                })),
-            });
+            for (const v of input.variants) {
+                const vUrls = v.imageUrls && v.imageUrls.length > 0
+                    ? v.imageUrls
+                    : v.imageUrl
+                        ? [v.imageUrl]
+                        : [];
+                await prisma_config_1.prisma.productVariant.create({
+                    data: {
+                        productId: id,
+                        sku: v.sku,
+                        barcode: v.barcode || null,
+                        color: v.color || null,
+                        colorHex: v.colorHex || null,
+                        size: v.size || null,
+                        weight: v.weight || null,
+                        dimensions: v.dimensions || null,
+                        price: v.price,
+                        compareAtPrice: v.compareAtPrice || null,
+                        stock: v.stock ?? 0,
+                        imageUrl: vUrls[0] || null,
+                        status: v.status || 'ACTIVE',
+                        images: vUrls.length > 0 ? {
+                            create: vUrls.map((url, imgIdx) => ({
+                                imageUrl: url,
+                                isPrimary: imgIdx === 0,
+                                sortOrder: imgIdx,
+                            })),
+                        } : undefined,
+                    },
+                });
+            }
         }
         const updated = await prisma_config_1.prisma.product.update({
             where: { id },
