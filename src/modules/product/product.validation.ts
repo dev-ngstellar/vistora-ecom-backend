@@ -15,15 +15,19 @@ const productImageSchema = z.object({
 });
 
 const productVariantSchema = z.object({
+  id: z.string().optional(),
   sku: z.string().min(1, 'Variant SKU is required'),
   barcode: z.string().nullable().optional(),
   color: z.string().nullable().optional(),
+  colorHex: z.string().nullable().optional(),
   size: z.string().nullable().optional(),
   weight: coercedNullableNumber,
   dimensions: z.string().nullable().optional(),
   price: coercedNumber.optional().default(0),
   compareAtPrice: coercedNullableNumber,
   stock: z.coerce.number().int().nonnegative().optional().default(0),
+  imageUrl: z.string().nullable().optional(),
+  imageUrls: z.array(z.string()).optional().default([]),
   status: z.nativeEnum(VariantStatus).optional().default(VariantStatus.ACTIVE),
 });
 

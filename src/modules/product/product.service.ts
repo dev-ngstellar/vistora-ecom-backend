@@ -190,51 +190,116 @@ export class ProductService {
     // Optional image sync
     if (input.images && Array.isArray(input.images)) {
       await prisma.productImage.deleteMany({ where: { productId: id } });
-      await prisma.productImage.createMany({
-        data: input.images.map((img, index) => ({
-          productId: id,
-          imageUrl: img.imageUrl,
-          altText: img.altText || null,
-          isPrimary: img.isPrimary ?? index === 0,
-          sortOrder: img.sortOrder ?? index,
-        })),
-      });
+      for (let index = 0; index < input.images.length; index++) {
+        const img = input.images[index];
+        if (!img || !img.imageUrl) continue;
+        await prisma.productImage.create({
+          data: {
+            productId: id,
+            imageUrl: img.imageUrl,
+            altText: img.altText || null,
+            isPrimary: img.isPrimary ?? index === 0,
+            sortOrder: img.sortOrder ?? index,
+          },
+        });
+      }
     }
 
-    // Optional variant sync
+    // Optional variant sync (Upsert logic to preserve FK constraints and update images safely)
     if (input.variants && Array.isArray(input.variants)) {
-      await prisma.productVariant.deleteMany({ where: { productId: id } });
+      const existingVariants = await prisma.productVariant.findMany({
+        where: { productId: id },
+        include: { images: true },
+      });
+
+      const inputVariantIds = input.variants.map((v: any) => v.id).filter(Boolean);
+      const inputSkus = input.variants.map((v) => v.sku).filter(Boolean);
+
+      // 1. Delete or deactivate variants that are no longer present in input
+      const variantsToDelete = existingVariants.filter(
+        (ev) => !inputVariantIds.includes(ev.id) && !inputSkus.includes(ev.sku)
+      );
+      for (const toDelete of variantsToDelete) {
+        try {
+          await prisma.productVariantImage.deleteMany({ where: { variantId: toDelete.id } });
+          await prisma.inventory.deleteMany({ where: { variantId: toDelete.id } });
+          await prisma.productVariant.delete({ where: { id: toDelete.id } });
+        } catch {
+          await prisma.productVariant.update({
+            where: { id: toDelete.id },
+            data: { status: 'INACTIVE' },
+          });
+        }
+      }
+
+      // 2. Upsert each input variant & update variant images
       for (const v of input.variants) {
-        const vUrls = (v as any).imageUrls && (v as any).imageUrls.length > 0
+        const vUrls: string[] = (v as any).imageUrls && (v as any).imageUrls.length > 0
           ? (v as any).imageUrls
           : (v as any).imageUrl
             ? [(v as any).imageUrl]
             : [];
 
-        await prisma.productVariant.create({
-          data: {
-            productId: id,
-            sku: v.sku,
-            barcode: v.barcode || null,
-            color: v.color || null,
-            colorHex: (v as any).colorHex || null,
-            size: v.size || null,
-            weight: v.weight || null,
-            dimensions: v.dimensions || null,
-            price: v.price,
-            compareAtPrice: v.compareAtPrice || null,
-            stock: v.stock ?? 0,
-            imageUrl: vUrls[0] || null,
-            status: v.status || 'ACTIVE',
-            images: vUrls.length > 0 ? {
-              create: vUrls.map((url: string, imgIdx: number) => ({
-                imageUrl: url,
-                isPrimary: imgIdx === 0,
-                sortOrder: imgIdx,
-              })),
-            } : undefined,
-          },
-        });
+        const existingVar = existingVariants.find(
+          (ev) => ((v as any).id && ev.id === (v as any).id) || ev.sku === v.sku
+        );
+
+        let targetVariantId: string;
+
+        if (existingVar) {
+          targetVariantId = existingVar.id;
+          await prisma.productVariant.update({
+            where: { id: existingVar.id },
+            data: {
+              sku: v.sku,
+              barcode: v.barcode || null,
+              color: v.color || null,
+              colorHex: (v as any).colorHex || null,
+              size: v.size || null,
+              weight: v.weight || null,
+              dimensions: v.dimensions || null,
+              price: v.price,
+              compareAtPrice: v.compareAtPrice || null,
+              stock: v.stock ?? 0,
+              imageUrl: vUrls[0] || null,
+              status: v.status || 'ACTIVE',
+            },
+          });
+        } else {
+          const newVar = await prisma.productVariant.create({
+            data: {
+              productId: id,
+              sku: v.sku,
+              barcode: v.barcode || null,
+              color: v.color || null,
+              colorHex: (v as any).colorHex || null,
+              size: v.size || null,
+              weight: v.weight || null,
+              dimensions: v.dimensions || null,
+              price: v.price,
+              compareAtPrice: v.compareAtPrice || null,
+              stock: v.stock ?? 0,
+              imageUrl: vUrls[0] || null,
+              status: v.status || 'ACTIVE',
+            },
+          });
+          targetVariantId = newVar.id;
+        }
+
+        // Sync Variant Images in ProductVariantImage table (using create for CUID generation)
+        await prisma.productVariantImage.deleteMany({ where: { variantId: targetVariantId } });
+        for (let imgIdx = 0; imgIdx < vUrls.length; imgIdx++) {
+          const url = vUrls[imgIdx];
+          if (!url) continue;
+          await prisma.productVariantImage.create({
+            data: {
+              variantId: targetVariantId,
+              imageUrl: url,
+              isPrimary: imgIdx === 0,
+              sortOrder: imgIdx,
+            },
+          });
+        }
       }
     }
 
@@ -266,7 +331,10 @@ export class ProductService {
         brand: true,
         collection: true,
         images: { orderBy: { sortOrder: 'asc' } },
-        variants: { orderBy: { price: 'asc' } },
+        variants: {
+          orderBy: { price: 'asc' },
+          include: { images: { orderBy: { sortOrder: 'asc' } } },
+        },
         attributes: true,
       },
     });
