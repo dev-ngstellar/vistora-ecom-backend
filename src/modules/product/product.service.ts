@@ -1,102 +1,69 @@
-import { Product, ProductImage, ProductVariant } from '@prisma/client';
-import { BrandRepository } from '../../repositories/brand.repository';
+import { Product, ProductImage, ProductVariant, PrismaClient } from '@prisma/client';
+import { ProductRepository, ProductFullDetails, ProductQueryFilters } from '../../repositories/product.repository';
 import { CategoryRepository } from '../../repositories/category.repository';
-import { CollectionRepository } from '../../repositories/collection.repository';
-import {
-  ProductFullDetails,
-  ProductQueryFilters,
-  ProductRepository,
-} from '../../repositories/product.repository';
-import { ApiError } from '../../utils/api-error.util';
-import { prisma } from '../../config/prisma.config';
-import {
-  CreateProductInput,
-  ProductImageInput,
-  ProductVariantInput,
-  UpdateProductInput,
-} from './product.types';
+import { CreateProductInput, UpdateProductInput, ProductImageInput, ProductVariantInput } from './product.types';
+import { ApiError } from '../../utils/api-error';
+
+const prisma = new PrismaClient();
 
 export class ProductService {
-  private readonly productRepository: ProductRepository;
-  private readonly categoryRepository: CategoryRepository;
-  private readonly brandRepository: BrandRepository;
-  private readonly collectionRepository: CollectionRepository;
+  private productRepository: ProductRepository;
+  private categoryRepository: CategoryRepository;
 
-  constructor(
-    productRepository: ProductRepository = new ProductRepository(),
-    categoryRepository: CategoryRepository = new CategoryRepository(),
-    brandRepository: BrandRepository = new BrandRepository(),
-    collectionRepository: CollectionRepository = new CollectionRepository(),
-  ) {
-    this.productRepository = productRepository;
-    this.categoryRepository = categoryRepository;
-    this.brandRepository = brandRepository;
-    this.collectionRepository = collectionRepository;
+  constructor() {
+    this.productRepository = new ProductRepository();
+    this.categoryRepository = new CategoryRepository();
   }
 
   public async createProduct(input: CreateProductInput): Promise<ProductFullDetails> {
-    let slug = input.slug ? this.slugify(input.slug) : this.slugify(input.name);
-
-    const existingSlug = await this.productRepository.findBySlug(slug);
-    if (existingSlug) {
-      slug = `${slug}-${Date.now().toString(36)}`;
-    }
-
     const category = await this.categoryRepository.findByIdActive(input.categoryId);
     if (!category) {
       throw ApiError.notFound(`Category with ID '${input.categoryId}' not found`);
     }
 
-    if (input.brandId) {
-      const brand = await this.brandRepository.findByIdActive(input.brandId);
-      if (!brand) {
-        throw ApiError.notFound(`Brand with ID '${input.brandId}' not found`);
-      }
+    const slug = input.slug ? this.slugify(input.slug) : this.slugify(input.name);
+    const existing = await this.productRepository.findBySlug(slug);
+    if (existing) {
+      throw ApiError.conflict(`Product with slug '${slug}' already exists`);
     }
 
-    if (input.collectionId) {
-      const collection = await this.collectionRepository.findByIdActive(input.collectionId);
-      if (!collection) {
-        throw ApiError.notFound(`Collection with ID '${input.collectionId}' not found`);
-      }
-    }
-
-    const createdProduct = await prisma.product.create({
+    const product = await prisma.product.create({
       data: {
         name: input.name,
         slug,
-        shortDescription: input.shortDescription || null,
-        description: input.description || null,
+        shortDescription: input.shortDescription,
+        description: input.description,
         sku: input.sku,
-        barcode: input.barcode || null,
+        barcode: input.barcode,
         categoryId: input.categoryId,
-        brandId: input.brandId || null,
-        collectionId: input.collectionId || null,
-        costPrice: input.costPrice || null,
+        brandId: input.brandId,
+        collectionId: input.collectionId,
+        costPrice: input.costPrice,
         price: input.price,
-        compareAtPrice: input.compareAtPrice || null,
-        taxRate: input.taxRate || null,
-        metaTitle: input.metaTitle || null,
-        metaDescription: input.metaDescription || null,
-        metaKeywords: input.metaKeywords || null,
+        compareAtPrice: input.compareAtPrice,
+        taxRate: input.taxRate,
+        metaTitle: input.metaTitle,
+        metaDescription: input.metaDescription,
+        metaKeywords: input.metaKeywords,
         status: input.status,
         visibility: input.visibility,
-        featured: input.featured ?? false,
+        featured: input.featured,
         images: {
-          create: input.images?.map((img) => ({
+          create: input.images?.map((img, index) => ({
             imageUrl: img.imageUrl,
             altText: img.altText || null,
-            isPrimary: img.isPrimary ?? false,
-            sortOrder: img.sortOrder ?? 0,
-          })),
+            isPrimary: img.isPrimary ?? index === 0,
+            sortOrder: img.sortOrder ?? index,
+          })) || [],
         },
         variants: {
           create: input.variants?.map((v) => {
-            const vUrls = (v as any).imageUrls && (v as any).imageUrls.length > 0
+            const vUrls: string[] = (v as any).imageUrls && (v as any).imageUrls.length > 0
               ? (v as any).imageUrls
               : (v as any).imageUrl
                 ? [(v as any).imageUrl]
                 : [];
+
             return {
               sku: v.sku,
               barcode: v.barcode || null,
@@ -109,25 +76,16 @@ export class ProductService {
               compareAtPrice: v.compareAtPrice || null,
               stock: v.stock ?? 0,
               imageUrl: vUrls[0] || null,
-              status: v.status,
-              images: vUrls.length > 0 ? {
-                create: vUrls.map((url: string, imgIdx: number) => ({
+              status: v.status || 'ACTIVE',
+              images: {
+                create: vUrls.map((url, imgIdx) => ({
                   imageUrl: url,
                   isPrimary: imgIdx === 0,
                   sortOrder: imgIdx,
                 })),
-              } : undefined,
+              },
             };
-          }),
-        },
-        attributes: {
-          create: input.attributes?.map((attr) => ({
-            name: attr.name,
-            type: attr.type,
-            values: {
-              create: attr.values.map((val) => ({ value: val })),
-            },
-          })),
+          }) || [],
         },
       },
       include: {
@@ -143,7 +101,23 @@ export class ProductService {
       },
     });
 
-    return createdProduct as ProductFullDetails;
+    // Auto-create inventory for each created variant
+    if (product.variants && product.variants.length > 0) {
+      for (const variant of product.variants) {
+        await prisma.inventory.create({
+          data: {
+            productId: product.id,
+            variantId: variant.id,
+            sku: variant.sku,
+            availableStock: variant.stock ?? 0,
+            minimumStock: 5,
+            reorderLevel: 10,
+          },
+        });
+      }
+    }
+
+    return product as ProductFullDetails;
   }
 
   public async getProductByIdOrSlug(idOrSlug: string): Promise<ProductFullDetails> {
@@ -205,7 +179,7 @@ export class ProductService {
       }
     }
 
-    // Optional variant sync (Upsert logic to preserve FK constraints and update images safely)
+    // Optional variant sync
     if (input.variants && Array.isArray(input.variants)) {
       const existingVariants = await prisma.productVariant.findMany({
         where: { productId: id },
@@ -215,7 +189,6 @@ export class ProductService {
       const inputVariantIds = input.variants.map((v: any) => v.id).filter(Boolean);
       const inputSkus = input.variants.map((v) => v.sku).filter(Boolean);
 
-      // 1. Delete or deactivate variants that are no longer present in input
       const variantsToDelete = existingVariants.filter(
         (ev) => !inputVariantIds.includes(ev.id) && !inputSkus.includes(ev.sku)
       );
@@ -232,7 +205,6 @@ export class ProductService {
         }
       }
 
-      // 2. Upsert each input variant & update variant images
       for (const v of input.variants) {
         const vUrls: string[] = (v as any).imageUrls && (v as any).imageUrls.length > 0
           ? (v as any).imageUrls
@@ -286,7 +258,6 @@ export class ProductService {
           targetVariantId = newVar.id;
         }
 
-        // Sync Variant Images in ProductVariantImage table (using create for CUID generation)
         await prisma.productVariantImage.deleteMany({ where: { variantId: targetVariantId } });
         for (let imgIdx = 0; imgIdx < vUrls.length; imgIdx++) {
           const url = vUrls[imgIdx];
@@ -349,9 +320,26 @@ export class ProductService {
 
     switch (action) {
       case 'DELETE': {
-        const res = await prisma.product.updateMany({
+        // Hard delete related entities first to avoid FK constraint violations
+        await prisma.orderItem.deleteMany({ where: { productId: { in: productIds } } });
+        await prisma.cartItem.deleteMany({ where: { productId: { in: productIds } } });
+        await prisma.wishlistItem.deleteMany({ where: { productId: { in: productIds } } });
+        await prisma.inventory.deleteMany({ where: { productId: { in: productIds } } });
+        
+        const variants = await prisma.productVariant.findMany({ where: { productId: { in: productIds } }, select: { id: true } });
+        const variantIds = variants.map(v => v.id);
+        if (variantIds.length > 0) {
+          await prisma.productVariantImage.deleteMany({ where: { variantId: { in: variantIds } } });
+          await prisma.productVariant.deleteMany({ where: { id: { in: variantIds } } });
+        }
+
+        await prisma.productImage.deleteMany({ where: { productId: { in: productIds } } });
+        await prisma.productAttributeValue.deleteMany({ where: { productId: { in: productIds } } });
+        await prisma.productAttribute.deleteMany({ where: { productId: { in: productIds } } });
+        await prisma.review.deleteMany({ where: { productId: { in: productIds } } });
+
+        const res = await prisma.product.deleteMany({
           where: { id: { in: productIds } },
-          data: { deletedAt: new Date() },
         });
         return res.count;
       }
@@ -396,7 +384,27 @@ export class ProductService {
       throw ApiError.notFound(`Product with ID '${id}' not found`);
     }
 
-    return this.productRepository.softDelete(id);
+    // Hard delete related entities first to ensure permanent deletion
+    await prisma.orderItem.deleteMany({ where: { productId: id } });
+    await prisma.cartItem.deleteMany({ where: { productId: id } });
+    await prisma.wishlistItem.deleteMany({ where: { productId: id } });
+    await prisma.inventory.deleteMany({ where: { productId: id } });
+
+    const variants = await prisma.productVariant.findMany({ where: { productId: id }, select: { id: true } });
+    const variantIds = variants.map(v => v.id);
+    if (variantIds.length > 0) {
+      await prisma.productVariantImage.deleteMany({ where: { variantId: { in: variantIds } } });
+      await prisma.productVariant.deleteMany({ where: { id: { in: variantIds } } });
+    }
+
+    await prisma.productImage.deleteMany({ where: { productId: id } });
+    await prisma.productAttributeValue.deleteMany({ where: { productId: id } });
+    await prisma.productAttribute.deleteMany({ where: { productId: id } });
+    await prisma.review.deleteMany({ where: { productId: id } });
+
+    return prisma.product.delete({
+      where: { id },
+    });
   }
 
   public async addProductImage(productId: string, input: ProductImageInput): Promise<ProductImage> {

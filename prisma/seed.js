@@ -1,10 +1,10 @@
-import { AccountStatus, AddressType, AuthProvider, BrandStatus, CategoryStatus, CouponStatus, CouponType, OrderStatus, PaymentMethod, PaymentStatus, ProductStatus, ProductVisibility, PrismaClient, UserRole } from '@prisma/client';
-import bcrypt from 'bcrypt';
+const { PrismaClient, UserRole, AccountStatus, AuthProvider, AddressType, CategoryStatus, BrandStatus, ProductStatus, ProductVisibility, CouponType, CouponStatus, OrderStatus, PaymentMethod, PaymentStatus } = require('@prisma/client');
+const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 
-async function main(): Promise<void> {
-  console.log('🌱 Starting Vistora Commerce Database Seeding...');
+async function main() {
+  console.log('🌱 Starting Seed with Direct High-Res Reference Images...');
 
   // 1. Seed System Roles
   console.log('📦 Seeding Roles & Permission Matrices...');
@@ -134,8 +134,8 @@ async function main(): Promise<void> {
     });
   }
 
-  // 4. Safely Clean Old Catalog Items
-  console.log('🧹 Purging old demo catalog data...');
+  // 4. HARD DELETE ALL PRODUCTS & RELATED ENTITIES
+  console.log('💥 HARD DELETING ALL CATALOG DATA FROM DATABASE...');
   await prisma.orderItem.deleteMany({});
   await prisma.cartItem.deleteMany({});
   await prisma.wishlistItem.deleteMany({});
@@ -151,14 +151,16 @@ async function main(): Promise<void> {
   await prisma.brand.deleteMany({});
   await prisma.banner.deleteMany({});
 
+  console.log('✅ Hard delete completed. Database completely cleared of previous data!');
+
   // 4.1 Seed Banners for Hero Slider
   console.log('🖼️ Seeding Hero Slider Banners...');
   const newBanners = [
     {
       title: 'Fresh Rice & Organic Grains',
       subtitle: 'Premium Royal Basmati, organic Sona Masoori, red rice, and unrefined grains delivered fresh.',
-      imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=1920&auto=format&fit=crop&q=80',
-      mobileImageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/raw_white_rice_grains.jpg',
+      mobileImageUrl: '/products-image all/raw_white_rice_grains.jpg',
       position: 'HERO_SLIDER',
       buttonText: 'Shop Rice & Grains',
       buttonLink: '/shop?category=rice-grains',
@@ -168,8 +170,8 @@ async function main(): Promise<void> {
     {
       title: 'Authentic Spices & Masala Powders',
       subtitle: 'Pure Guntur chilli powder, Salem turmeric, roasted coriander, and rich home-style sambar masala.',
-      imageUrl: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=1920&auto=format&fit=crop&q=80',
-      mobileImageUrl: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/red_chilli_powder_bowl.jpg',
+      mobileImageUrl: '/products-image all/red_chilli_powder_bowl.jpg',
       position: 'HERO_SLIDER',
       buttonText: 'Explore Spices',
       buttonLink: '/shop?category=spices-masala-powders',
@@ -179,8 +181,8 @@ async function main(): Promise<void> {
     {
       title: 'Health Mix & Multigrain Nutrition',
       subtitle: 'Traditional Sathu Maavu, sprouted millet drinks, and special nutrition mixes for kids and family.',
-      imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1920&auto=format&fit=crop&q=80',
-      mobileImageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/health_mix_sathu_maavu.jpg',
+      mobileImageUrl: '/products-image all/health_mix_sathu_maavu.jpg',
       position: 'HERO_SLIDER',
       buttonText: 'Shop Health Mix',
       buttonLink: '/shop?category=health-mix-nutrition',
@@ -193,8 +195,8 @@ async function main(): Promise<void> {
     await prisma.banner.create({ data: b });
   }
 
-  // 5. Seed Parent Categories & Subcategories
-  console.log('📁 Seeding Main Categories & Subcategories...');
+  // 5. Seed Parent Categories & Subcategories with Clean Local Images
+  console.log('📁 Seeding Main Categories & Subcategories with Reference Images...');
 
   // Parent Category 1: Rice & Grains
   const catRiceGrains = await prisma.category.create({
@@ -202,7 +204,7 @@ async function main(): Promise<void> {
       name: 'Rice & Grains',
       slug: 'rice-grains',
       description: 'Premium quality raw, boiled, basmati rice varieties and wholesome unrefined grains',
-      imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=1000&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/raw_white_rice_grains.jpg',
       status: CategoryStatus.ACTIVE,
       sortOrder: 1,
     },
@@ -214,7 +216,7 @@ async function main(): Promise<void> {
       slug: 'varieties-of-rice',
       parentId: catRiceGrains.id,
       description: 'Basmati, Sona Masoori, Ponni, Red Rice, and traditional hand-pounded rice varieties',
-      imageUrl: 'https://images.unsplash.com/photo-1536304929831-ee1ca9d44906?w=800&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/raw_white_rice_grains.jpg',
       status: CategoryStatus.ACTIVE,
       sortOrder: 1,
     },
@@ -226,7 +228,7 @@ async function main(): Promise<void> {
       slug: 'other-grains-millets',
       parentId: catRiceGrains.id,
       description: 'Whole wheat, Ragi, Foxtail, Pearl Millet (Bajra), Oats, and native super-grains',
-      imageUrl: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/raw_white_rice_grains.jpg',
       status: CategoryStatus.ACTIVE,
       sortOrder: 2,
     },
@@ -238,7 +240,7 @@ async function main(): Promise<void> {
       name: 'Spices & Masala Powders',
       slug: 'spices-masala-powders',
       description: 'Authentic stone-ground single spices, vibrant chilli, turmeric, coriander, and curry masalas',
-      imageUrl: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=1000&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/red_chilli_powder_bowl.jpg',
       status: CategoryStatus.ACTIVE,
       sortOrder: 2,
     },
@@ -250,7 +252,7 @@ async function main(): Promise<void> {
       slug: 'red-chilli-powder',
       parentId: catSpices.id,
       description: 'Guntur hot chilli powder, Kashmiri color chilli powder, and organic ground chilli',
-      imageUrl: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=800&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/red_chilli_powder_bowl.jpg',
       status: CategoryStatus.ACTIVE,
       sortOrder: 1,
     },
@@ -262,7 +264,7 @@ async function main(): Promise<void> {
       slug: 'turmeric-powder',
       parentId: catSpices.id,
       description: 'High curcumin Salem & Lakadong pure organic turmeric powder',
-      imageUrl: 'https://images.unsplash.com/photo-1615485290176-65476a2eb245?w=800&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/turmeric_powder_bowl.jpg',
       status: CategoryStatus.ACTIVE,
       sortOrder: 2,
     },
@@ -274,7 +276,7 @@ async function main(): Promise<void> {
       slug: 'coriander-powder',
       parentId: catSpices.id,
       description: 'Aromatic roasted coriander seed powder for rich curries',
-      imageUrl: 'https://images.unsplash.com/photo-1509358217951-4ff270043167?w=800&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/coriander_powder_bowl.jpg',
       status: CategoryStatus.ACTIVE,
       sortOrder: 3,
     },
@@ -286,7 +288,7 @@ async function main(): Promise<void> {
       slug: 'other-masala-powders',
       parentId: catSpices.id,
       description: 'Sambar powder, Garam Masala, Rasam powder, Chettinad curry powder, and specialty spice mixes',
-      imageUrl: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=800&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/red_chilli_powder_bowl.jpg',
       status: CategoryStatus.ACTIVE,
       sortOrder: 4,
     },
@@ -298,7 +300,7 @@ async function main(): Promise<void> {
       name: 'Health Mix & Nutrition',
       slug: 'health-mix-nutrition',
       description: 'Nourishing traditional multigrain health powders, sprouted millet drink mixes, and kids nutrition',
-      imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1000&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/health_mix_sathu_maavu.jpg',
       status: CategoryStatus.ACTIVE,
       sortOrder: 3,
     },
@@ -310,7 +312,7 @@ async function main(): Promise<void> {
       slug: 'health-mix',
       parentId: catHealthMix.id,
       description: 'Classic multigrain Sathu Maavu & energy health drink mix',
-      imageUrl: 'https://images.unsplash.com/photo-1514944288352-fffac99f0bdf?w=800&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/health_mix_sathu_maavu.jpg',
       status: CategoryStatus.ACTIVE,
       sortOrder: 1,
     },
@@ -322,7 +324,7 @@ async function main(): Promise<void> {
       slug: 'millet-health-mix',
       parentId: catHealthMix.id,
       description: 'Sprouted 5-millet health mix, diabetic-friendly low GI millet drinks',
-      imageUrl: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=800&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/health_mix_sathu_maavu.jpg',
       status: CategoryStatus.ACTIVE,
       sortOrder: 2,
     },
@@ -334,7 +336,7 @@ async function main(): Promise<void> {
       slug: 'traditional-nutrition-mixes',
       parentId: catHealthMix.id,
       description: 'Sprouted Ragi almond mix, herbal protein formulations, and Ayurvedic wellness powders',
-      imageUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/health_mix_sathu_maavu.jpg',
       status: CategoryStatus.ACTIVE,
       sortOrder: 3,
     },
@@ -346,7 +348,7 @@ async function main(): Promise<void> {
       slug: 'kids-health-mix',
       parentId: catHealthMix.id,
       description: 'Sprouted malt, cocoa health drink mix, and junior growth nutrition powders',
-      imageUrl: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=800&auto=format&fit=crop&q=80',
+      imageUrl: '/products-image all/health_mix_sathu_maavu.jpg',
       status: CategoryStatus.ACTIVE,
       sortOrder: 4,
     },
@@ -390,8 +392,8 @@ async function main(): Promise<void> {
     },
   });
 
-  // 7. Seed Products
-  console.log('🌾 Seeding Realistic Food, Spice & Health Mix Products...');
+  // 7. Seed Products with Direct Reference Images
+  console.log('🌾 Seeding Products with Direct Reference Images...');
 
   const productDataList = [
     // ---------------- Rice & Grains - Varieties of Rice (4) ----------------
@@ -405,7 +407,7 @@ async function main(): Promise<void> {
       compareAtPrice: 220.00,
       shortDescription: 'Extra-long grain aromatic Royal Basmati Rice (1kg pack).',
       description: 'Aged to perfection for exquisite aroma, fluffy texture, and non-sticky cooking. Ideal for biryanis and special festive meals.',
-      image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/raw_white_rice_grains.jpg',
       color: 'Pearl White',
       colorHex: '#FFFFFF',
       stock: 60,
@@ -420,7 +422,7 @@ async function main(): Promise<void> {
       compareAtPrice: 480.00,
       shortDescription: 'Lightweight aromatic medium-grain Sona Masoori raw rice (5kg).',
       description: 'Cultivated organically without chemical fertilizers. Lightweight, easy to digest, perfect for daily meals and rice dishes.',
-      image: 'https://images.unsplash.com/photo-1536304929831-ee1ca9d44906?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/raw_white_rice_grains.jpg',
       color: 'Off-White',
       colorHex: '#FAF9F6',
       stock: 45,
@@ -435,7 +437,7 @@ async function main(): Promise<void> {
       compareAtPrice: 150.00,
       shortDescription: 'Nutrient-dense bran rich red rice hand-milled naturally (1kg).',
       description: 'Rich in antioxidants, iron, and fiber. Helps regulate blood sugar and provides sustained energy throughout the day.',
-      image: 'https://images.unsplash.com/photo-1568290747447-3d12d4d9ce25?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/raw_white_rice_grains.jpg',
       color: 'Reddish Brown',
       colorHex: '#8B0000',
       stock: 50,
@@ -450,7 +452,7 @@ async function main(): Promise<void> {
       compareAtPrice: 420.00,
       shortDescription: 'Hygienically steamed Ponni rice for soft fluffy meals (5kg).',
       description: 'A staple across South Indian households, processed under strict quality controls for soft texture and great taste.',
-      image: 'https://images.unsplash.com/photo-1596560548464-f010549b84d7?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/raw_white_rice_grains.jpg',
       color: 'Classic White',
       colorHex: '#F5F5F5',
       stock: 40,
@@ -467,7 +469,7 @@ async function main(): Promise<void> {
       compareAtPrice: 140.00,
       shortDescription: 'Unpolished protein & fiber rich Foxtail Millet (1kg).',
       description: 'Low glycemic index millet ideal for healthy weight management, upma, dosa batter, and porridge.',
-      image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/raw_white_rice_grains.jpg',
       color: 'Golden Yellow',
       colorHex: '#FFD700',
       stock: 55,
@@ -482,7 +484,7 @@ async function main(): Promise<void> {
       compareAtPrice: 310.00,
       shortDescription: 'Premium MP Sharbati golden wheat grains for rotis (5kg).',
       description: 'Naturally sweet and golden wheat grains grown in fertile soil. Yields extra soft, delicious rotis and parathas.',
-      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/raw_white_rice_grains.jpg',
       color: 'Wheat Amber',
       colorHex: '#DAA520',
       stock: 35,
@@ -497,7 +499,7 @@ async function main(): Promise<void> {
       compareAtPrice: 105.00,
       shortDescription: 'Calcium rich organic finger millet grains (Ragi) (1kg).',
       description: 'Super-rich source of calcium and iron. Great for grinding fresh malt, porridge, and traditional Ragi Mudde.',
-      image: 'https://images.unsplash.com/photo-1514944288352-fffac99f0bdf?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/raw_white_rice_grains.jpg',
       color: 'Dark Brown',
       colorHex: '#5C4033',
       stock: 70,
@@ -512,7 +514,7 @@ async function main(): Promise<void> {
       compareAtPrice: 115.00,
       shortDescription: 'Cleaned gluten-free Pearl Millet whole grains (1kg).',
       description: 'Warm and energizing millet perfect for winter flatbreads, porridge, and healthy grain bowls.',
-      image: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/raw_white_rice_grains.jpg',
       color: 'Greyish Green',
       colorHex: '#708090',
       stock: 48,
@@ -529,7 +531,7 @@ async function main(): Promise<void> {
       compareAtPrice: 175.00,
       shortDescription: 'Fiery pungent Guntur stemless chilli powder (250g).',
       description: 'Sun-dried Andhra Guntur chillies ground slowly to retain spicy essential oils and deep red tone.',
-      image: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/red_chilli_powder_bowl.jpg',
       color: 'Fiery Red',
       colorHex: '#FF0000',
       stock: 80,
@@ -544,7 +546,7 @@ async function main(): Promise<void> {
       compareAtPrice: 200.00,
       shortDescription: 'Mild spice high natural color Kashmiri chilli powder (200g).',
       description: 'Gives rich red color to gravy dishes without excessive heat. 100% natural without artificial colors.',
-      image: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/red_chilli_powder_bowl.jpg',
       color: 'Deep Crimson',
       colorHex: '#DC143C',
       stock: 65,
@@ -561,7 +563,7 @@ async function main(): Promise<void> {
       compareAtPrice: 150.00,
       shortDescription: 'High aroma cold-ground Salem turmeric powder (250g).',
       description: 'Packed with natural immunity-boosting curcumin. Lab-tested for zero lead adulteration and pure aroma.',
-      image: 'https://images.unsplash.com/photo-1615485290176-65476a2eb245?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/turmeric_powder_bowl.jpg',
       color: 'Bright Yellow',
       colorHex: '#FFCC00',
       stock: 90,
@@ -576,7 +578,7 @@ async function main(): Promise<void> {
       compareAtPrice: 220.00,
       shortDescription: '7%+ Curcumin content Meghalaya Lakadong turmeric (100g).',
       description: 'Harvested from Meghalaya hills, known globally for the highest natural curcumin concentration.',
-      image: 'https://images.unsplash.com/photo-1588666309990-d68f08e3d4a6?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/turmeric_powder_bowl.jpg',
       color: 'Golden Amber',
       colorHex: '#FF8C00',
       stock: 40,
@@ -593,7 +595,7 @@ async function main(): Promise<void> {
       compareAtPrice: 135.00,
       shortDescription: 'Freshly roasted cold-ground Dhaniya powder (250g).',
       description: 'Slow-roasted coriander seeds ground fresh for citrusy aroma and rich thick gravy texture.',
-      image: 'https://images.unsplash.com/photo-1509358217951-4ff270043167?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/coriander_powder_bowl.jpg',
       color: 'Olive Khaki',
       colorHex: '#808000',
       stock: 75,
@@ -608,7 +610,7 @@ async function main(): Promise<void> {
       compareAtPrice: 240.00,
       shortDescription: '100% Organic aromatic coriander seed powder value pack (500g).',
       description: 'Pure certified organic dhaniya powder, essential for everyday Indian dal and curry prep.',
-      image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/coriander_powder_bowl.jpg',
       color: 'Earthy Green',
       colorHex: '#556B2F',
       stock: 50,
@@ -625,7 +627,7 @@ async function main(): Promise<void> {
       compareAtPrice: 185.00,
       shortDescription: 'Authentic 12-spice traditional home style sambar powder (200g).',
       description: 'Hand-roasted spices blending coriander, red chilli, fenugreek, toor dal, and asafoetida.',
-      image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/red_chilli_powder_bowl.jpg',
       color: 'Rustic Orange',
       colorHex: '#D2691E',
       stock: 85,
@@ -640,7 +642,7 @@ async function main(): Promise<void> {
       compareAtPrice: 195.00,
       shortDescription: 'Intense fragrance 15-whole spice garam masala (100g).',
       description: 'Contains cardamoms, cinnamon, star anise, cloves, nutmeg, and black pepper for biryanis.',
-      image: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/coriander_powder_bowl.jpg',
       color: 'Warm Cinnamon',
       colorHex: '#7B3F00',
       stock: 60,
@@ -655,7 +657,7 @@ async function main(): Promise<void> {
       compareAtPrice: 190.00,
       shortDescription: 'Bold aromatic Chettinad style spice mix (200g).',
       description: 'Infused with fennel, stone flower (kalpasi), black pepper, and dry roasted red chillies.',
-      image: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/red_chilli_powder_bowl.jpg',
       color: 'Deep Terracotta',
       colorHex: '#CC4E5C',
       stock: 45,
@@ -672,7 +674,7 @@ async function main(): Promise<void> {
       compareAtPrice: 299.00,
       shortDescription: '18-ingredient sprouted traditional health drink powder (500g).',
       description: 'Contains sprouted ragi, wheat, green gram, almonds, cardamom, and cashews. 100% natural, zero preservatives.',
-      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/health_mix_sathu_maavu.jpg',
       color: 'Creamy Tan',
       colorHex: '#D2B48C',
       stock: 100,
@@ -687,7 +689,7 @@ async function main(): Promise<void> {
       compareAtPrice: 550.00,
       shortDescription: 'Complete family wellness 24 multigrain energy mix (1kg).',
       description: 'Ideal morning nutrition porridge for adults, senior citizens, and active lifestyle individuals.',
-      image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/health_mix_sathu_maavu.jpg',
       color: 'Natural Beige',
       colorHex: '#F5F5DC',
       stock: 75,
@@ -704,7 +706,7 @@ async function main(): Promise<void> {
       compareAtPrice: 340.00,
       shortDescription: 'Sprouted Ragi, Foxtail, Kodo, Little & Barnyard millet blend (500g).',
       description: 'Sprouted for maximum nutrient bioavailability. Rich in dietary fiber, protein, and essential minerals.',
-      image: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/health_mix_sathu_maavu.jpg',
       color: 'Earthy Brown',
       colorHex: '#8B5A2B',
       stock: 65,
@@ -719,7 +721,7 @@ async function main(): Promise<void> {
       compareAtPrice: 360.00,
       shortDescription: 'Low GI high fiber sugar-free millet nutrition mix (500g).',
       description: 'Specially formulated with fenugreek seeds, roasted chana, and millets to support stable blood sugar levels.',
-      image: 'https://images.unsplash.com/photo-1514944288352-fffac99f0bdf?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/health_mix_sathu_maavu.jpg',
       color: 'Sand Ochre',
       colorHex: '#CC7722',
       stock: 50,
@@ -736,7 +738,7 @@ async function main(): Promise<void> {
       compareAtPrice: 280.00,
       shortDescription: 'Hand-sprouted Ragi enriched with California almonds & cardamom (500g).',
       description: 'Traditional recipe for bone health and sustained stamina. Easy to cook in milk or water in 5 minutes.',
-      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/health_mix_sathu_maavu.jpg',
       color: 'Deep Cocoa',
       colorHex: '#4A2C11',
       stock: 80,
@@ -751,7 +753,7 @@ async function main(): Promise<void> {
       compareAtPrice: 450.00,
       shortDescription: 'Plant protein infused with organic Ashwagandha & Shatavari (400g).',
       description: 'Enhances vitality, reduces daily stress, and improves muscle recovery naturally.',
-      image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/health_mix_sathu_maavu.jpg',
       color: 'Herbal Beige',
       colorHex: '#C5B358',
       stock: 40,
@@ -768,7 +770,7 @@ async function main(): Promise<void> {
       compareAtPrice: 350.00,
       shortDescription: 'Delicious natural cocoa & sprouted malt health drink for kids (500g).',
       description: 'Packed with natural brain and growth nutrients. Kids love the rich chocolate taste without artificial white sugar.',
-      image: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/health_mix_sathu_maavu.jpg',
       color: 'Chocolate Brown',
       colorHex: '#3D2314',
       stock: 90,
@@ -783,7 +785,7 @@ async function main(): Promise<void> {
       compareAtPrice: 320.00,
       shortDescription: 'Gentle easy-to-digest sprouted ragi with almond powder for toddlers (400g).',
       description: 'Ideal starting solid food and growth porridge for growing children. Rich in natural iron and calcium.',
-      image: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=800&auto=format&fit=crop&q=80',
+      image: '/products-image all/health_mix_sathu_maavu.jpg',
       color: 'Soft Chestnut',
       colorHex: '#954535',
       stock: 60,
@@ -829,7 +831,6 @@ async function main(): Promise<void> {
       },
     });
 
-    // Create inventory record linked to default variant
     const variant = await prisma.productVariant.findFirst({ where: { productId: product.id } });
     if (variant) {
       await prisma.inventory.create({
@@ -935,7 +936,7 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log('✨ Database seeding complete successfully!');
+  console.log('✨ Clean reference image seeding finished successfully!');
 }
 
 main()
