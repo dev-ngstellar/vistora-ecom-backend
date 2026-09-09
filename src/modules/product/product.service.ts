@@ -2,7 +2,7 @@ import { Product, ProductImage, ProductVariant, PrismaClient } from '@prisma/cli
 import { ProductRepository, ProductFullDetails, ProductQueryFilters } from '../../repositories/product.repository';
 import { CategoryRepository } from '../../repositories/category.repository';
 import { CreateProductInput, UpdateProductInput, ProductImageInput, ProductVariantInput } from './product.types';
-import { ApiError } from '../../utils/api-error';
+import { ApiError } from '../../utils/api-error.util';
 
 const prisma = new PrismaClient();
 
@@ -334,7 +334,7 @@ export class ProductService {
         }
 
         await prisma.productImage.deleteMany({ where: { productId: { in: productIds } } });
-        await prisma.productAttributeValue.deleteMany({ where: { productId: { in: productIds } } });
+        await prisma.productAttributeValue.deleteMany({ where: { attribute: { productId: { in: productIds } } } });
         await prisma.productAttribute.deleteMany({ where: { productId: { in: productIds } } });
         await prisma.review.deleteMany({ where: { productId: { in: productIds } } });
 
@@ -398,7 +398,7 @@ export class ProductService {
     }
 
     await prisma.productImage.deleteMany({ where: { productId: id } });
-    await prisma.productAttributeValue.deleteMany({ where: { productId: id } });
+    await prisma.productAttributeValue.deleteMany({ where: { attribute: { productId: id } } });
     await prisma.productAttribute.deleteMany({ where: { productId: id } });
     await prisma.review.deleteMany({ where: { productId: id } });
 
