@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function updateCategoryImages() {
-  console.log('🖼️ Updating category images with new millets assets...');
+  console.log('🖼️ Updating category images with Cloudinary assets...');
 
   await prisma.category.updateMany({
     where: {
@@ -13,7 +13,7 @@ async function updateCategoryImages() {
       ],
     },
     data: {
-      imageUrl: '/products-image all/millets/Thinai front image_11zon.jpg.jpeg',
+      imageUrl: 'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017709/Thinai_front_image_11zon.jpg.jpg',
     },
   });
 
@@ -22,11 +22,11 @@ async function updateCategoryImages() {
       slug: 'varieties-of-rice',
     },
     data: {
-      imageUrl: '/products-image all/millets/karuppu kavuni front image.webp',
+      imageUrl: 'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017708/Black_rice_front_image.jpg.jpg',
     },
   });
 
-  console.log('✅ Category images updated!');
+  console.log('✅ Category images updated to Cloudinary URLs!');
 }
 
 updateCategoryImages()

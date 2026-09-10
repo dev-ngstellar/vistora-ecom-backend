@@ -3,7 +3,7 @@ import { PrismaClient, ProductStatus, ProductVisibility } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function seedMillets() {
-  console.log('🌱 Starting Millets & Heritage Grains Product Seeding...');
+  console.log('🌱 Starting Millets & Heritage Grains Product Seeding with Cloudinary URLs...');
 
   // 1. Find or create the Category
   let category = await prisma.category.findFirst({
@@ -44,7 +44,7 @@ async function seedMillets() {
     });
   }
 
-  // 3. Define the 9 Products with all image angles
+  // 3. Define the 9 Products with official Cloudinary hosted images
   const milletProducts = [
     {
       name: 'Organic Red Cholam (Red Sorghum) - 1kg',
@@ -59,9 +59,8 @@ async function seedMillets() {
       colorHex: '#8B2500',
       stock: 60,
       images: [
-        '/products-image all/millets/Red cholam front.jpg.jpeg',
-        '/products-image all/millets/Red cholam back image.jpg.jpeg',
-        '/products-image all/millets/Red cholam 3rd image.jpg.jpeg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017712/Red_cholam_front.jpg.jpg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017712/Red_cholam_3rd_image.jpg.jpg',
       ],
     },
     {
@@ -77,9 +76,9 @@ async function seedMillets() {
       colorHex: '#FFFFF0',
       stock: 55,
       images: [
-        '/products-image all/millets/White cholam Front.jpg',
-        '/products-image all/millets/White cholam back image.jpg',
-        '/products-image all/millets/White cholam 3rd image.jpg.jpeg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017712/White_cholam_Front.jpg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017712/White_cholam_back_image.jpg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017711/White_cholam_3rd_image.jpg.jpg',
       ],
     },
     {
@@ -95,9 +94,9 @@ async function seedMillets() {
       colorHex: '#EEE8AA',
       stock: 70,
       images: [
-        '/products-image all/millets/Saamai front image_11zon.jpg.jpeg',
-        '/products-image all/millets/Saamai back image_11zon.jpg.jpeg',
-        '/products-image all/millets/saamai 3rd image_11zon.jpg.jpeg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017708/Saamai_front_image_11zon.jpg.jpg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017708/Saamai_back_image_11zon.jpg.jpg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017713/saamai_3rd_image_11zon.jpg.jpg',
       ],
     },
     {
@@ -113,9 +112,9 @@ async function seedMillets() {
       colorHex: '#FFD700',
       stock: 65,
       images: [
-        '/products-image all/millets/Thinai front image_11zon.jpg.jpeg',
-        '/products-image all/millets/Thinai back image_11zon.jpg.jpeg',
-        '/products-image all/millets/Thinai 3rd image_11zon.jpg.jpeg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017709/Thinai_front_image_11zon.jpg.jpg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017709/Thinai_back_image_11zon.jpg.jpg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017709/Thinai_3rd_image_11zon.jpg.jpg',
       ],
     },
     {
@@ -131,9 +130,9 @@ async function seedMillets() {
       colorHex: '#708090',
       stock: 75,
       images: [
-        '/products-image all/millets/kambu front image.webp',
-        '/products-image all/millets/kambu back image.webp',
-        '/products-image all/millets/kambu 3rd image.webp',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017709/kambu_front_image.webp',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017709/kambu_back_image.webp',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017709/kambu_3rd_image.webp',
       ],
     },
     {
@@ -149,9 +148,9 @@ async function seedMillets() {
       colorHex: '#1A1110',
       stock: 45,
       images: [
-        '/products-image all/millets/Black rice front image.jpg.jpeg',
-        '/products-image all/millets/Blace rice back image.jpg.jpeg',
-        '/products-image all/millets/Black rice 3rd image.jpg.jpeg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017708/Black_rice_front_image.jpg.jpg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017708/Blace_rice_back_image.jpg.jpg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017708/Black_rice_3rd_image.jpg.jpg',
       ],
     },
     {
@@ -167,9 +166,9 @@ async function seedMillets() {
       colorHex: '#8B4513',
       stock: 80,
       images: [
-        '/products-image all/millets/kollu frontside.webp',
-        '/products-image all/millets/kollu backside.webp',
-        '/products-image all/millets/kollu 3rd image.webp',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017711/kollu_frontside.webp',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017711/kollu_backside.webp',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017711/kollu_3rd_image.webp',
       ],
     },
     {
@@ -185,9 +184,9 @@ async function seedMillets() {
       colorHex: '#9B111E',
       stock: 50,
       images: [
-        '/products-image all/millets/maapillai samba front.webp',
-        '/products-image all/millets/mappilai samba back_11zon.jpg.jpeg',
-        '/products-image all/millets/Mapillai samba 3rd image.webp',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017711/maapillai_samba_front.webp',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017712/mappilai_samba_back_11zon.jpg.jpg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017711/Mapillai_samba_3rd_image.webp',
       ],
     },
     {
@@ -203,9 +202,9 @@ async function seedMillets() {
       colorHex: '#D2B48C',
       stock: 65,
       images: [
-        '/products-image all/millets/varugu front image_11zon.jpg.jpeg',
-        '/products-image all/millets/varagu back image_11zon.jpg.jpeg',
-        '/products-image all/millets/varugu 3rd image_11zon.jpg.jpeg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017711/varugu_front_image_11zon.jpg.jpg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017710/varagu_back_image_11zon.jpg.jpg',
+        'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017710/varugu_3rd_image_11zon.jpg.jpg',
       ],
     },
   ];
@@ -255,7 +254,7 @@ async function seedMillets() {
           },
         },
       });
-      console.log(`🔄 Updated product: ${item.name}`);
+      console.log(`🔄 Updated product with Cloudinary images: ${item.name}`);
     } else {
       // Create new
       const created = await prisma.product.create({
@@ -310,11 +309,11 @@ async function seedMillets() {
           },
         });
       }
-      console.log(`✨ Created product: ${item.name}`);
+      console.log(`✨ Created product with Cloudinary images: ${item.name}`);
     }
   }
 
-  console.log('✅ Successfully seeded all 9 Millets & Heritage Grain products!');
+  console.log('✅ Successfully seeded all 9 Millets & Heritage Grain products with Cloudinary CDN URLs!');
 }
 
 seedMillets()
