@@ -49,7 +49,14 @@ export const createApp = (): Application => {
   app.use(hpp());
 
   // 4. Request Body Parsing
-  app.use(express.json({ limit: '10mb' }));
+  app.use(
+    express.json({
+      limit: '10mb',
+      verify: (req: any, _res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // 5. Cookie Parsing

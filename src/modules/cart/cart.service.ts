@@ -62,6 +62,13 @@ export class CartService {
     // Recalculate discount if a coupon is applied
     let discount = 0;
     let validCouponCode = rawCart.couponCode;
+    let appliedCouponInfo: {
+      code: string;
+      title: string;
+      type: string;
+      value: number;
+      discountAmount: number;
+    } | null = null;
 
     if (validCouponCode) {
       const coupon = await this.couponRepository.findByCode(validCouponCode);
@@ -77,6 +84,14 @@ export class CartService {
             discount = Number(coupon.value);
           }
           if (discount > subtotal) discount = subtotal;
+
+          appliedCouponInfo = {
+            code: coupon.code,
+            title: coupon.title,
+            type: coupon.type,
+            value: Number(coupon.value),
+            discountAmount: discount,
+          };
         } else {
           validCouponCode = null; // Minimum order threshold not met
         }
@@ -106,6 +121,7 @@ export class CartService {
       userId,
       status: rawCart.status,
       couponCode: validCouponCode,
+      coupon: appliedCouponInfo,
       items: formattedItems,
       subtotal,
       discount,
@@ -216,12 +232,30 @@ export class CartService {
     for (const guestItem of input.guestItems) {
       try {
         const product = await this.productRepository.findByIdFull(guestItem.productId);
-        if (product && product.status === 'ACTIVE') {
-          const unitPrice = Number(product.price);
+        if (product && (product.status === 'ACTIVE' || (product.status as any) === 'PUBLISHED')) {
+          let unitPrice = Number(product.price);
+          let targetVariantId = guestItem.variantId || null;
+
+          if (!targetVariantId && product.variants && product.variants.length > 0) {
+            const defaultVariant =
+              product.variants.find((v) => v.status === 'ACTIVE' && v.stock >= guestItem.quantity) ||
+              product.variants[0];
+            if (defaultVariant) {
+              targetVariantId = defaultVariant.id;
+            }
+          }
+
+          if (targetVariantId && product.variants) {
+            const variant = product.variants.find((v) => v.id === targetVariantId);
+            if (variant && variant.status === 'ACTIVE') {
+              unitPrice = Number(variant.price);
+            }
+          }
+
           await this.cartRepository.addOrUpdateCartItem(
             cart.id,
             guestItem.productId,
-            guestItem.variantId || null,
+            targetVariantId,
             guestItem.quantity,
             unitPrice,
           );
@@ -250,8 +284,26 @@ export class CartService {
 
     const cart = await this.cartRepository.getOrCreateUserCart(userId);
 
+    // Calculate current cart subtotal
+    let currentSubtotal = 0;
+    for (const item of cart.items) {
+      const price = item.variant ? Number(item.variant.price) : Number(item.product.price);
+      currentSubtotal += price * item.quantity;
+    }
+
+    if (currentSubtotal === 0) {
+      throw ApiError.badRequest('Your shopping cart is empty. Please add items before applying a coupon.');
+    }
+
+    const minOrder = coupon.minimumOrderAmount ? Number(coupon.minimumOrderAmount) : 0;
+    if (minOrder > 0 && currentSubtotal < minOrder) {
+      throw ApiError.badRequest(
+        `Minimum order spend of ₹${minOrder.toLocaleString('en-IN')} is required to use coupon '${coupon.code}'. (Current subtotal: ₹${currentSubtotal.toLocaleString('en-IN')})`
+      );
+    }
+
     await this.cartRepository.updateCartTotals(cart.id, {
-      subtotal: Number(cart.subtotal),
+      subtotal: currentSubtotal,
       discount: Number(cart.discount),
       tax: Number(cart.tax),
       shipping: Number(cart.shipping),

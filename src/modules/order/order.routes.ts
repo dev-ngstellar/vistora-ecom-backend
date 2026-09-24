@@ -10,10 +10,9 @@ const orderController = new OrderController();
 
 orderRouter.use(authenticate);
 
-// ==================== CUSTOMER SELF-SERVICE ORDER & PAYMENT ROUTES ====================
+// ==================== CUSTOMER SELF-SERVICE ORDER ROUTES ====================
 orderRouter.get('/orders/my', asyncHandler(orderController.getMyOrders));
 orderRouter.post('/orders', asyncHandler(orderController.createCustomerOrder));
-orderRouter.post('/payments/verify', asyncHandler(orderController.verifyPayment));
 
 // ==================== ADMIN MANAGEMENT ROUTES ====================
 orderRouter.get(

@@ -22,11 +22,20 @@ export interface ApplyCouponInput {
   code: string;
 }
 
+export interface AppliedCouponInfo {
+  code: string;
+  title: string;
+  type: string;
+  value: number;
+  discountAmount: number;
+}
+
 export interface CartSummaryResponse {
   id: string;
   userId: string;
   status: string;
   couponCode: string | null;
+  coupon?: AppliedCouponInfo | null;
   items: {
     id: string;
     productId: string;

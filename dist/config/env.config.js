@@ -29,6 +29,7 @@ const envSchema = zod_1.z.object({
     CLOUDINARY_API_SECRET: zod_1.z.string().optional().default(''),
     RAZORPAY_KEY_ID: zod_1.z.string().optional().default(''),
     RAZORPAY_KEY_SECRET: zod_1.z.string().optional().default(''),
+    RAZORPAY_WEBHOOK_SECRET: zod_1.z.string().optional().default(''),
     STRIPE_SECRET_KEY: zod_1.z.string().optional().default(''),
     STRIPE_WEBHOOK_SECRET: zod_1.z.string().optional().default(''),
     SMTP_HOST: zod_1.z.string().optional().default('localhost'),

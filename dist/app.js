@@ -46,7 +46,12 @@ const createApp = () => {
     // 3. HTTP Parameter Pollution Protection
     app.use((0, hpp_1.default)());
     // 4. Request Body Parsing
-    app.use(express_1.default.json({ limit: '10mb' }));
+    app.use(express_1.default.json({
+        limit: '10mb',
+        verify: (req, _res, buf) => {
+            req.rawBody = buf;
+        },
+    }));
     app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
     // 5. Cookie Parsing
     app.use((0, cookie_parser_1.default)());
