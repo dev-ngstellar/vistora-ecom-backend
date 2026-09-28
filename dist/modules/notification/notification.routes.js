@@ -8,6 +8,27 @@ const notification_controller_1 = require("./notification.controller");
 const notificationRouter = (0, express_1.Router)();
 exports.notificationRouter = notificationRouter;
 const notificationController = new notification_controller_1.NotificationController();
+notificationRouter.use(auth_middleware_1.authenticate);
+/**
+ * @openapi
+ * /notifications:
+ *   get:
+ *     tags:
+ *       - Notifications
+ *     summary: Get list of notifications for the current user
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: List of notifications
+ */
+notificationRouter.get('/notifications', (0, async_handler_util_1.asyncHandler)(notificationController.getNotifications));
 /**
  * @openapi
  * /notifications/count:
@@ -15,48 +36,46 @@ const notificationController = new notification_controller_1.NotificationControl
  *     tags:
  *       - Notifications
  *     summary: Get unread notification counts
- *     description: Retrieves total unread notification counts broken down by category (order, inventory, customer, system).
+ *     description: Retrieves total unread notification counts broken down by category.
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Notification counts retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Notification count statistics retrieved successfully
- *                 data:
- *                   type: object
- *                   properties:
- *                     unreadCount:
- *                       type: integer
- *                       example: 3
- *                     totalCount:
- *                       type: integer
- *                       example: 12
- *                     categories:
- *                       type: object
- *                       properties:
- *                         order:
- *                           type: integer
- *                           example: 1
- *                         inventory:
- *                           type: integer
- *                           example: 1
- *                         customer:
- *                           type: integer
- *                           example: 1
- *                         system:
- *                           type: integer
- *                           example: 0
- *       401:
- *         description: Unauthorized - Authentication required
  */
-notificationRouter.get('/notifications/count', auth_middleware_1.authenticate, (0, async_handler_util_1.asyncHandler)(notificationController.getNotificationCount));
+notificationRouter.get('/notifications/count', (0, async_handler_util_1.asyncHandler)(notificationController.getNotificationCount));
+/**
+ * @openapi
+ * /notifications/read-all:
+ *   patch:
+ *     tags:
+ *       - Notifications
+ *     summary: Mark all notifications as read
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All notifications marked as read
+ */
+notificationRouter.patch('/notifications/read-all', (0, async_handler_util_1.asyncHandler)(notificationController.markAllAsRead));
+notificationRouter.post('/notifications/read-all', (0, async_handler_util_1.asyncHandler)(notificationController.markAllAsRead));
+/**
+ * @openapi
+ * /notifications/{id}/read:
+ *   patch:
+ *     tags:
+ *       - Notifications
+ *     summary: Mark a single notification as read
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification marked as read
+ */
+notificationRouter.patch('/notifications/:id/read', (0, async_handler_util_1.asyncHandler)(notificationController.markAsRead));

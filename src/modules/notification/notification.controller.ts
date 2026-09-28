@@ -10,8 +10,30 @@ export class NotificationController {
     this.notificationService = notificationService;
   }
 
+  public getNotifications = async (req: Request, res: Response): Promise<Response> => {
+    const userId = req.user?.id;
+    if (!userId) {
+      return ApiResponseHandler.error(res, HTTP_STATUS.UNAUTHORIZED, 'Authentication required');
+    }
+
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+    const result = await this.notificationService.getNotifications(userId, limit);
+
+    return ApiResponseHandler.success(
+      res,
+      HTTP_STATUS.OK,
+      'Notifications retrieved successfully',
+      result.notifications,
+      { unreadCount: result.unreadCount, totalCount: result.totalCount },
+    );
+  };
+
   public getNotificationCount = async (req: Request, res: Response): Promise<Response> => {
-    const userId = req.user?.id || 'guest';
+    const userId = req.user?.id;
+    if (!userId) {
+      return ApiResponseHandler.error(res, HTTP_STATUS.UNAUTHORIZED, 'Authentication required');
+    }
+
     const counts = await this.notificationService.getNotificationCount(userId);
 
     return ApiResponseHandler.success(
@@ -19,6 +41,39 @@ export class NotificationController {
       HTTP_STATUS.OK,
       'Notification count statistics retrieved successfully',
       counts,
+    );
+  };
+
+  public markAsRead = async (req: Request, res: Response): Promise<Response> => {
+    const userId = req.user?.id;
+    if (!userId) {
+      return ApiResponseHandler.error(res, HTTP_STATUS.UNAUTHORIZED, 'Authentication required');
+    }
+
+    const id = req.params.id as string;
+    await this.notificationService.markAsRead(id, userId);
+
+    return ApiResponseHandler.success(
+      res,
+      HTTP_STATUS.OK,
+      'Notification marked as read',
+      null,
+    );
+  };
+
+  public markAllAsRead = async (req: Request, res: Response): Promise<Response> => {
+    const userId = req.user?.id;
+    if (!userId) {
+      return ApiResponseHandler.error(res, HTTP_STATUS.UNAUTHORIZED, 'Authentication required');
+    }
+
+    await this.notificationService.markAllAsRead(userId);
+
+    return ApiResponseHandler.success(
+      res,
+      HTTP_STATUS.OK,
+      'All notifications marked as read',
+      null,
     );
   };
 }

@@ -53,10 +53,14 @@ export class OrderRepository extends BaseRepository<Order, Prisma.OrderDelegate>
     if (filters.startDate || filters.endDate) {
       where.createdAt = {};
       if (filters.startDate) {
-        where.createdAt.gte = new Date(filters.startDate);
+        const start = new Date(filters.startDate);
+        start.setUTCHours(0, 0, 0, 0);
+        where.createdAt.gte = start;
       }
       if (filters.endDate) {
-        where.createdAt.lte = new Date(filters.endDate);
+        const end = new Date(filters.endDate);
+        end.setUTCHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
       }
     }
 

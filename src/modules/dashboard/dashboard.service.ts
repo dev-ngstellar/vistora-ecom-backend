@@ -1,17 +1,46 @@
+import { prisma } from '../../config/prisma.config';
 import { DashboardSummaryResponse } from './dashboard.types';
+import { OrderStatus, UserRole } from '@prisma/client';
 
 export class DashboardService {
   public async getDashboardSummary(): Promise<DashboardSummaryResponse> {
-    // Return structured dashboard statistics (ready for Prisma DB aggregates)
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+
+    const [
+      orders,
+      totalOrders,
+      pendingOrders,
+      totalCustomers,
+      newCustomersToday,
+      totalProducts,
+      lowStockCount,
+    ] = await Promise.all([
+      prisma.order.findMany({ select: { total: true } }),
+      prisma.order.count(),
+      prisma.order.count({ where: { status: OrderStatus.PENDING } }),
+      prisma.user.count({ where: { role: { name: UserRole.CUSTOMER } } }),
+      prisma.user.count({
+        where: {
+          role: { name: UserRole.CUSTOMER },
+          createdAt: { gte: todayStart },
+        },
+      }),
+      prisma.product.count(),
+      prisma.productVariant.count({ where: { stock: { lte: 5 } } }),
+    ]);
+
+    const totalSales = orders.reduce((sum, o) => sum + Number(o.total), 0);
+
     return {
-      totalSales: 128450.0,
-      totalOrders: 1482,
-      pendingOrders: 38,
-      totalCustomers: 894,
-      newCustomersToday: 12,
-      totalProducts: 342,
-      lowStockCount: 5,
-      currency: 'USD',
+      totalSales,
+      totalOrders,
+      pendingOrders,
+      totalCustomers,
+      newCustomersToday,
+      totalProducts,
+      lowStockCount,
+      currency: 'INR',
     };
   }
 }

@@ -7,14 +7,25 @@ class ReportService {
     constructor() {
         this.reportRepository = new report_repository_1.ReportRepository();
     }
+    parseDateRange(startDate, endDate) {
+        let start;
+        let end;
+        if (startDate) {
+            start = new Date(startDate);
+            start.setUTCHours(0, 0, 0, 0);
+        }
+        if (endDate) {
+            end = new Date(endDate);
+            end.setUTCHours(23, 59, 59, 999);
+        }
+        return { start, end };
+    }
     async getSalesReport(startDate, endDate) {
-        const start = startDate ? new Date(startDate) : undefined;
-        const end = endDate ? new Date(endDate) : undefined;
+        const { start, end } = this.parseDateRange(startDate, endDate);
         return this.reportRepository.getSalesReport(start, end);
     }
     async getOrderReport(startDate, endDate) {
-        const start = startDate ? new Date(startDate) : undefined;
-        const end = endDate ? new Date(endDate) : undefined;
+        const { start, end } = this.parseDateRange(startDate, endDate);
         return this.reportRepository.getOrderReport(start, end);
     }
     async getProductReport() {

@@ -4,6 +4,7 @@ import { ApiError } from '../../utils/api-error.util';
 import { logger } from '../../config/logger.config';
 import { RazorpayService } from './razorpay.service';
 import { OrderService } from '../order/order.service';
+import { NotificationService } from '../notification/notification.service';
 
 export interface CreateRazorpayOrderPayload {
   orderId?: string;
@@ -25,10 +26,12 @@ export interface PaymentVerificationInput {
 export class PaymentService {
   private razorpayService: RazorpayService;
   private orderService: OrderService;
+  private notificationService: NotificationService;
 
   constructor() {
     this.razorpayService = new RazorpayService();
     this.orderService = new OrderService();
+    this.notificationService = new NotificationService();
   }
 
   /**
@@ -213,6 +216,9 @@ export class PaymentService {
           },
         }),
       ]);
+
+      // Trigger admin payment notification
+      this.notificationService.createPaymentNotification(order).catch(() => {});
 
       return {
         success: true,

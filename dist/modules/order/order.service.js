@@ -5,10 +5,13 @@ const client_1 = require("@prisma/client");
 const order_repository_1 = require("../../repositories/order.repository");
 const api_error_util_1 = require("../../utils/api-error.util");
 const prisma_config_1 = require("../../config/prisma.config");
+const notification_service_1 = require("../notification/notification.service");
 class OrderService {
     orderRepository;
+    notificationService;
     constructor() {
         this.orderRepository = new order_repository_1.OrderRepository();
+        this.notificationService = new notification_service_1.NotificationService();
     }
     async getOrders(filters) {
         return this.orderRepository.findOrders(filters);
@@ -45,18 +48,88 @@ class OrderService {
     }
     async exportOrdersCsv(filters) {
         const { orders } = await this.orderRepository.findOrders({ ...filters, limit: 10000 });
-        const headers = ['Order Number', 'Date', 'Customer Name', 'Email', 'Status', 'Payment Status', 'Total Amount', 'Items Count'];
-        const rows = orders.map((o) => [
-            o.orderNumber,
-            new Date(o.createdAt).toISOString(),
-            `"${o.user?.fullName || ''}"`,
-            o.user?.email || '',
-            o.status,
-            o.payments[0]?.status || 'PENDING',
-            o.total,
-            o.items.length,
-        ]);
-        const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+        const escapeCsv = (val) => {
+            if (val === null || val === undefined)
+                return '""';
+            const str = String(val).replace(/"/g, '""');
+            return `"${str}"`;
+        };
+        const headers = [
+            'Order Number',
+            'Date & Time',
+            'Customer Name',
+            'Customer Email',
+            'Customer Phone',
+            'Order Status',
+            'Payment Status',
+            'Payment Method',
+            'Items Count',
+            'Items Summary',
+            'Subtotal (INR)',
+            'Discount (INR)',
+            'Shipping Fee (INR)',
+            'Tax (INR)',
+            'Total Amount (INR)',
+            'Shipping Address',
+            'Shipping Carrier',
+            'Tracking Number',
+        ];
+        const rows = orders.map((o) => {
+            const customerName = o.user?.fullName ||
+                [o.user?.firstName, o.user?.lastName].filter(Boolean).join(' ') ||
+                o.address?.fullName ||
+                'Guest Customer';
+            const customerEmail = o.user?.email || '';
+            const customerPhone = o.user?.phone || o.address?.phone || '';
+            const itemsSummary = (o.items || [])
+                .map((item) => {
+                const name = item.product?.title || 'Product';
+                const variant = item.variant?.sku ? ` [${item.variant.sku}]` : '';
+                return `${name}${variant} (x${item.quantity})`;
+            })
+                .join('; ');
+            const totalItemsCount = (o.items || []).reduce((sum, item) => sum + (item.quantity || 1), 0);
+            const address = o.address
+                ? [
+                    o.address.addressLine1,
+                    o.address.addressLine2,
+                    o.address.city,
+                    o.address.state,
+                    o.address.postalCode,
+                    o.address.country,
+                ]
+                    .filter(Boolean)
+                    .join(', ')
+                : '';
+            const payment = o.payments?.[0];
+            const paymentStatus = payment?.status || 'PENDING';
+            const paymentMethod = payment?.paymentMethod || 'COD';
+            const formattedDate = new Date(o.createdAt).toLocaleString('en-IN', {
+                dateStyle: 'medium',
+                timeStyle: 'short',
+            });
+            return [
+                escapeCsv(o.orderNumber),
+                escapeCsv(formattedDate),
+                escapeCsv(customerName),
+                escapeCsv(customerEmail),
+                escapeCsv(customerPhone),
+                escapeCsv(o.status),
+                escapeCsv(paymentStatus),
+                escapeCsv(paymentMethod),
+                escapeCsv(totalItemsCount),
+                escapeCsv(itemsSummary),
+                escapeCsv(Number(o.subtotal).toFixed(2)),
+                escapeCsv(Number(o.discount).toFixed(2)),
+                escapeCsv(Number(o.shipping).toFixed(2)),
+                escapeCsv(Number(o.tax).toFixed(2)),
+                escapeCsv(Number(o.total).toFixed(2)),
+                escapeCsv(address),
+                escapeCsv(o.shipment?.courierName || '—'),
+                escapeCsv(o.shipment?.trackingNumber || '—'),
+            ];
+        });
+        const csvContent = [headers.map(escapeCsv).join(','), ...rows.map((r) => r.join(','))].join('\n');
         return csvContent;
     }
     // ==================== CUSTOMER ORDER PLACEMENT ====================
@@ -257,6 +330,8 @@ class OrderService {
             }
             return createdOrder;
         });
+        // Asynchronously dispatch real-time admin notification
+        this.notificationService.createOrderNotification(order).catch(() => { });
         return order;
     }
     // ==================== PAYMENT VERIFICATION ====================
