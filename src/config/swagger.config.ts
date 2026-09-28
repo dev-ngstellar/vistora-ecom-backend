@@ -1,4 +1,5 @@
 import { Application } from 'express';
+import path from 'path';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './env.config';
@@ -7,19 +8,23 @@ const swaggerOptions: swaggerJSDoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Vistora Commerce REST API Specification',
+      title: 'Vistora Commerce API Documentation',
       version: '1.0.0',
       description:
-        'Enterprise Single Vendor Fashion eCommerce Platform REST API built with Node.js, Express, TypeScript, and Prisma ORM.',
+        'Enterprise Single-Vendor Fashion eCommerce REST API built with Node.js, Express, TypeScript, PostgreSQL, and Prisma ORM.',
       contact: {
-        name: 'Vistora Engineering Team',
+        name: 'Vistora Engineering Support',
         email: 'support@vistoracommerce.com',
       },
     },
     servers: [
       {
-        url: `http://localhost:${env.PORT}${env.API_PREFIX}`,
-        description: 'Development Server',
+        url: `http://localhost:${env.PORT || 4000}${env.API_PREFIX}`,
+        description: 'Local Development Server',
+      },
+      {
+        url: `https://api-vistora-ecom.ngstellar.com${env.API_PREFIX}`,
+        description: 'Production Live Server',
       },
     ],
     components: {
@@ -38,16 +43,34 @@ const swaggerOptions: swaggerJSDoc.Options = {
       },
     ],
   },
-  apis: ['./src/modules/**/*.routes.ts', './src/routes/**/*.ts'],
+  apis: [
+    path.join(__dirname, '../modules/**/*.routes.{ts,js}'),
+    path.join(__dirname, '../routes/**/*.{ts,js}'),
+    path.join(process.cwd(), 'src/modules/**/*.routes.ts'),
+    path.join(process.cwd(), 'dist/modules/**/*.routes.js'),
+  ],
 };
 
 export const swaggerSpec = swaggerJSDoc(swaggerOptions);
 
 export const setupSwagger = (app: Application): void => {
-  // Swagger Documentation UI endpoint
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  const swaggerUiOptions: swaggerUi.SwaggerUiOptions = {
+    explorer: true,
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      docExpansion: 'list',
+      filter: true,
+      tryItOutEnabled: true,
+    },
+    customSiteTitle: 'Vistora Commerce API Specs & Testing',
+  };
 
-  // Raw JSON spec endpoint
+  // 1. Swagger Documentation UI endpoint (at /api-docs and /api/v1/docs)
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+  app.use(`${env.API_PREFIX}/docs`, swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+
+  // 2. Raw JSON specification endpoint
   app.get(`${env.API_PREFIX}/swagger.json`, (_req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(swaggerSpec);
