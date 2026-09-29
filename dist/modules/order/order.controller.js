@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrderController = void 0;
+const client_1 = require("@prisma/client");
 const http_status_constant_1 = require("../../constants/http-status.constant");
 const api_response_util_1 = require("../../utils/api-response.util");
 const order_service_1 = require("./order.service");
@@ -30,10 +31,14 @@ class OrderController {
     };
     updateOrderStatus = async (req, res) => {
         const id = req.params['id'];
-        const { status, remarks } = req.body;
+        const { status, remarks, courierName, trackingNumber, trackingUrl } = req.body;
         const updatedBy = req.user?.email || 'Store Manager';
-        const order = await this.orderService.updateOrderStatus(id, status, remarks, updatedBy);
-        return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.OK, 'Order status updated successfully', order);
+        const order = await this.orderService.updateOrderStatus(id, status || client_1.OrderStatus.SHIPPED, remarks, updatedBy, {
+            courierName,
+            trackingNumber,
+            trackingUrl,
+        });
+        return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.OK, 'Order tracking and status updated successfully', order);
     };
     cancelOrder = async (req, res) => {
         const id = req.params['id'];

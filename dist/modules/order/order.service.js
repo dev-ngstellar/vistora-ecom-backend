@@ -23,12 +23,12 @@ class OrderService {
         }
         return order;
     }
-    async updateOrderStatus(id, status, remarks, updatedBy) {
+    async updateOrderStatus(id, status, remarks, updatedBy, shippingInfo) {
         const existing = await this.orderRepository.findOrderById(id);
         if (!existing) {
             throw api_error_util_1.ApiError.notFound('Order not found');
         }
-        return this.orderRepository.updateOrderStatus(id, status, remarks, updatedBy);
+        return this.orderRepository.updateOrderStatus(id, status, remarks, updatedBy, shippingInfo);
     }
     async cancelOrder(id, reason, updatedBy) {
         const existing = await this.orderRepository.findOrderById(id);

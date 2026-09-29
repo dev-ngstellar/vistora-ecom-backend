@@ -35,11 +35,21 @@ export class OrderController {
 
   public updateOrderStatus = async (req: Request, res: Response): Promise<Response> => {
     const id = req.params['id'] as string;
-    const { status, remarks } = req.body;
+    const { status, remarks, courierName, trackingNumber, trackingUrl } = req.body;
     const updatedBy = (req.user as any)?.email || 'Store Manager';
 
-    const order = await this.orderService.updateOrderStatus(id, status, remarks, updatedBy);
-    return ApiResponseHandler.success(res, HTTP_STATUS.OK, 'Order status updated successfully', order);
+    const order = await this.orderService.updateOrderStatus(
+      id,
+      status || OrderStatus.SHIPPED,
+      remarks,
+      updatedBy,
+      {
+        courierName,
+        trackingNumber,
+        trackingUrl,
+      }
+    );
+    return ApiResponseHandler.success(res, HTTP_STATUS.OK, 'Order tracking and status updated successfully', order);
   };
 
   public cancelOrder = async (req: Request, res: Response): Promise<Response> => {

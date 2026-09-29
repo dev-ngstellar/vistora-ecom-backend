@@ -169,7 +169,17 @@ export class OrderRepository extends BaseRepository<Order, Prisma.OrderDelegate>
     });
   }
 
-  public async updateOrderStatus(id: string, status: OrderStatus, remarks?: string, updatedBy?: string) {
+  public async updateOrderStatus(
+    id: string,
+    status: OrderStatus,
+    remarks?: string,
+    updatedBy?: string,
+    shippingInfo?: {
+      courierName?: string;
+      trackingNumber?: string;
+      trackingUrl?: string;
+    }
+  ) {
     return this.prisma.$transaction(async (tx) => {
       const order = await tx.order.update({
         where: { id },
@@ -185,23 +195,75 @@ export class OrderRepository extends BaseRepository<Order, Prisma.OrderDelegate>
         },
       });
 
-      // Synchronize shipment status if applicable
-      if (status === OrderStatus.SHIPPED || status === OrderStatus.DELIVERED) {
-        const shipmentStatus = status === OrderStatus.SHIPPED ? ShipmentStatus.SHIPPED : ShipmentStatus.DELIVERED;
+      // Synchronize shipment status and offline courier tracking details
+      const isShippedOrDelivered = status === OrderStatus.SHIPPED || status === OrderStatus.DELIVERED;
+      const hasTrackingDetails = Boolean(shippingInfo?.courierName || shippingInfo?.trackingNumber || shippingInfo?.trackingUrl);
+
+      if (isShippedOrDelivered || hasTrackingDetails) {
+        const shipmentStatus =
+          status === OrderStatus.DELIVERED
+            ? ShipmentStatus.DELIVERED
+            : status === OrderStatus.SHIPPED
+            ? ShipmentStatus.SHIPPED
+            : ShipmentStatus.IN_TRANSIT;
+
+        const existingShipment = await tx.shipment.findUnique({ where: { orderId: id } });
+
+        const courierName =
+          shippingInfo?.courierName?.trim() ||
+          existingShipment?.courierName ||
+          'The Professional Couriers';
+
+        const courierNameLower = courierName.toLowerCase();
+        const defaultCourierUrl =
+          courierNameLower.includes('professional') || courierNameLower.includes('tpc')
+            ? 'https://www.tpcindia.com'
+            : courierNameLower.includes('st courier') || courierNameLower.includes('stc') || courierNameLower.includes('st ')
+            ? 'https://stcourier.com'
+            : courierNameLower.includes('post') || courierNameLower.includes('india post')
+            ? 'https://www.indiapost.gov.in'
+            : courierNameLower.includes('dtdc')
+            ? 'https://www.dtdc.in'
+            : courierNameLower.includes('franch')
+            ? 'https://www.franchexpress.com'
+            : courierNameLower.includes('trackon')
+            ? 'https://trackon.in'
+            : courierNameLower.includes('blue dart') || courierNameLower.includes('bluedart')
+            ? 'https://www.bluedart.com'
+            : courierNameLower.includes('delhivery')
+            ? 'https://www.delhivery.com'
+            : 'https://www.tpcindia.com';
+
+        const trackingNumber =
+          shippingInfo?.trackingNumber?.trim() ||
+          existingShipment?.trackingNumber ||
+          `TRK-${Math.floor(100000 + Math.random() * 900000)}`;
+
+        const trackingUrl =
+          shippingInfo?.trackingUrl !== undefined && shippingInfo.trackingUrl?.trim() !== ''
+            ? shippingInfo.trackingUrl.trim()
+            : existingShipment?.trackingUrl || defaultCourierUrl;
+
         await tx.shipment.upsert({
           where: { orderId: id },
           update: {
             shipmentStatus,
-            ...(status === OrderStatus.SHIPPED ? { shippedAt: new Date() } : {}),
-            ...(status === OrderStatus.DELIVERED ? { deliveredAt: new Date() } : {}),
+            courierName,
+            trackingNumber,
+            trackingUrl,
+            ...(status === OrderStatus.SHIPPED && !existingShipment?.shippedAt ? { shippedAt: new Date() } : {}),
+            ...(status === OrderStatus.DELIVERED && !existingShipment?.deliveredAt ? { deliveredAt: new Date() } : {}),
+            ...(remarks ? { remarks } : {}),
           },
           create: {
             orderId: id,
             shipmentStatus,
-            courierName: 'Vistora Express Logistics',
-            trackingNumber: `VSTR-TRK-${Math.floor(100000 + Math.random() * 900000)}`,
+            courierName,
+            trackingNumber,
+            trackingUrl,
             ...(status === OrderStatus.SHIPPED ? { shippedAt: new Date() } : {}),
             ...(status === OrderStatus.DELIVERED ? { deliveredAt: new Date() } : {}),
+            remarks: remarks || null,
           },
         });
       }

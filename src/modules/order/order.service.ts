@@ -25,12 +25,22 @@ export class OrderService {
     return order;
   }
 
-  public async updateOrderStatus(id: string, status: OrderStatus, remarks?: string, updatedBy?: string) {
+  public async updateOrderStatus(
+    id: string,
+    status: OrderStatus,
+    remarks?: string,
+    updatedBy?: string,
+    shippingInfo?: {
+      courierName?: string;
+      trackingNumber?: string;
+      trackingUrl?: string;
+    }
+  ) {
     const existing = await this.orderRepository.findOrderById(id);
     if (!existing) {
       throw ApiError.notFound('Order not found');
     }
-    return this.orderRepository.updateOrderStatus(id, status, remarks, updatedBy);
+    return this.orderRepository.updateOrderStatus(id, status, remarks, updatedBy, shippingInfo);
   }
 
   public async cancelOrder(id: string, reason?: string, updatedBy?: string) {
