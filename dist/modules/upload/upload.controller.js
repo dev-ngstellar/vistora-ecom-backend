@@ -32,18 +32,33 @@ exports.uploadMiddleware = (0, multer_1.default)({
 const isCloudinaryReady = () => {
     return Boolean(env_config_1.env.CLOUDINARY_CLOUD_NAME && env_config_1.env.CLOUDINARY_API_KEY && env_config_1.env.CLOUDINARY_API_SECRET);
 };
-const uploadBufferToCloudinary = (fileBuffer, folder = 'vistora_store') => {
+const optimizeCloudinaryUrl = (url) => {
+    if (!url || typeof url !== 'string')
+        return url;
+    if (!url.includes('cloudinary.com'))
+        return url;
+    if (url.includes('/f_auto') || url.includes('/q_auto'))
+        return url;
+    return url.replace('/image/upload/', '/image/upload/f_auto,q_auto/');
+};
+const uploadBufferToCloudinary = (fileBuffer, folder = 'vistora_products') => {
     return new Promise((resolve, reject) => {
         const uploadStream = cloudinary_config_1.cloudinary.uploader.upload_stream({
             folder,
-            resource_type: 'auto',
+            resource_type: 'image',
+            transformation: [
+                { width: 1600, height: 1600, crop: 'limit' },
+                { quality: 'auto:good' },
+                { fetch_format: 'auto' },
+            ],
         }, (error, result) => {
             if (error || !result) {
                 logger_config_1.logger.error({ err: error }, 'Cloudinary upload error');
                 return reject(error || new Error('Cloudinary upload failed'));
             }
+            const rawUrl = result.secure_url || result.url;
             resolve({
-                url: result.secure_url || result.url,
+                url: optimizeCloudinaryUrl(rawUrl),
                 publicId: result.public_id,
                 format: result.format,
                 bytes: result.bytes,

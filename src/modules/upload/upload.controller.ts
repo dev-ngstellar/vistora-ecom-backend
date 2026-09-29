@@ -33,23 +33,36 @@ const isCloudinaryReady = () => {
   return Boolean(env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET);
 };
 
+const optimizeCloudinaryUrl = (url: string): string => {
+  if (!url || typeof url !== 'string') return url;
+  if (!url.includes('cloudinary.com')) return url;
+  if (url.includes('/f_auto') || url.includes('/q_auto')) return url;
+  return url.replace('/image/upload/', '/image/upload/f_auto,q_auto/');
+};
+
 const uploadBufferToCloudinary = (
   fileBuffer: Buffer,
-  folder = 'vistora_store'
+  folder = 'vistora_products'
 ): Promise<{ url: string; publicId: string; format?: string; bytes?: number }> => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder,
-        resource_type: 'auto',
+        resource_type: 'image',
+        transformation: [
+          { width: 1600, height: 1600, crop: 'limit' },
+          { quality: 'auto:good' },
+          { fetch_format: 'auto' },
+        ],
       },
       (error, result) => {
         if (error || !result) {
           logger.error({ err: error }, 'Cloudinary upload error');
           return reject(error || new Error('Cloudinary upload failed'));
         }
+        const rawUrl = result.secure_url || result.url;
         resolve({
-          url: result.secure_url || result.url,
+          url: optimizeCloudinaryUrl(rawUrl),
           publicId: result.public_id,
           format: result.format,
           bytes: result.bytes,

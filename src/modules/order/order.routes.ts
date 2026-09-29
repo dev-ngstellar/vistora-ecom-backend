@@ -8,7 +8,8 @@ import { OrderController } from './order.controller';
 const orderRouter = Router();
 const orderController = new OrderController();
 
-orderRouter.use(authenticate);
+orderRouter.use('/orders', authenticate);
+
 
 // ==================== CUSTOMER SELF-SERVICE ORDER ROUTES ====================
 /**

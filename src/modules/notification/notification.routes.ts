@@ -6,7 +6,8 @@ import { NotificationController } from './notification.controller';
 const notificationRouter = Router();
 const notificationController = new NotificationController();
 
-notificationRouter.use(authenticate);
+notificationRouter.use('/notifications', authenticate);
+
 
 /**
  * @openapi

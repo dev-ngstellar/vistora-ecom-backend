@@ -10,7 +10,7 @@ const wishlist_validation_1 = require("./wishlist.validation");
 const wishlistRouter = (0, express_1.Router)();
 exports.wishlistRouter = wishlistRouter;
 const wishlistController = new wishlist_controller_1.WishlistController();
-wishlistRouter.use(auth_middleware_1.authenticate);
+wishlistRouter.use('/wishlist', auth_middleware_1.authenticate);
 /**
  * @openapi
  * /wishlist:

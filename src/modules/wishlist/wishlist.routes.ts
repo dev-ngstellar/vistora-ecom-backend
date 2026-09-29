@@ -8,7 +8,8 @@ import { addToWishlistSchema } from './wishlist.validation';
 const wishlistRouter = Router();
 const wishlistController = new WishlistController();
 
-wishlistRouter.use(authenticate);
+wishlistRouter.use('/wishlist', authenticate);
+
 
 /**
  * @openapi

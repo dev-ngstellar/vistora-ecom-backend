@@ -8,7 +8,7 @@ const notification_controller_1 = require("./notification.controller");
 const notificationRouter = (0, express_1.Router)();
 exports.notificationRouter = notificationRouter;
 const notificationController = new notification_controller_1.NotificationController();
-notificationRouter.use(auth_middleware_1.authenticate);
+notificationRouter.use('/notifications', auth_middleware_1.authenticate);
 /**
  * @openapi
  * /notifications:

@@ -10,7 +10,7 @@ const order_controller_1 = require("./order.controller");
 const orderRouter = (0, express_1.Router)();
 exports.orderRouter = orderRouter;
 const orderController = new order_controller_1.OrderController();
-orderRouter.use(auth_middleware_1.authenticate);
+orderRouter.use('/orders', auth_middleware_1.authenticate);
 // ==================== CUSTOMER SELF-SERVICE ORDER ROUTES ====================
 /**
  * @openapi

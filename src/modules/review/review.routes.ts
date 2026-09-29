@@ -8,8 +8,12 @@ import { ReviewController } from './review.controller';
 const reviewRouter = Router();
 const reviewController = new ReviewController();
 
-reviewRouter.use(authenticate);
-reviewRouter.use(requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER));
+reviewRouter.use(
+  '/reviews',
+  authenticate,
+  requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
+);
+
 
 reviewRouter.get('/reviews/stats', asyncHandler(reviewController.getReviewStats));
 reviewRouter.get('/reviews', asyncHandler(reviewController.getReviews));

@@ -12,12 +12,12 @@ const swaggerOptions = {
     definition: {
         openapi: '3.0.0',
         info: {
-            title: 'Vistora Commerce API Documentation',
+            title: 'VISTORA TRADING PRIVATE LIMITED API Documentation',
             version: '1.0.0',
-            description: 'Enterprise Single-Vendor Fashion eCommerce REST API built with Node.js, Express, TypeScript, PostgreSQL, and Prisma ORM.',
+            description: 'Official E-Commerce API for VISTORA TRADING PRIVATE LIMITED — High performance marketplace backend.',
             contact: {
-                name: 'Vistora Engineering Support',
-                email: 'support@vistoracommerce.com',
+                name: 'Vistora Customer & Technical Support',
+                email: 'vistoraoffice123@gmail.com',
             },
         },
         servers: [

@@ -10,7 +10,7 @@ const customer_controller_1 = require("./customer.controller");
 const customerRouter = (0, express_1.Router)();
 exports.customerRouter = customerRouter;
 const customerController = new customer_controller_1.CustomerController();
-customerRouter.use(auth_middleware_1.authenticate);
+customerRouter.use('/customers', auth_middleware_1.authenticate);
 // ==================== CUSTOMER SELF-SERVICE ADDRESS ROUTES ====================
 customerRouter.get('/customers/addresses', (0, async_handler_util_1.asyncHandler)(customerController.getMyAddresses));
 customerRouter.post('/customers/addresses', (0, async_handler_util_1.asyncHandler)(customerController.createAddress));

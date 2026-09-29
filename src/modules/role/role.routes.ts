@@ -8,8 +8,12 @@ import { RoleController } from './role.controller';
 const roleRouter = Router();
 const roleController = new RoleController();
 
-roleRouter.use(authenticate);
-roleRouter.use(requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN));
+roleRouter.use(
+  '/roles',
+  authenticate,
+  requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+);
+
 
 roleRouter.get('/roles/stats', asyncHandler(roleController.getRoleStats));
 roleRouter.get('/roles', asyncHandler(roleController.getAllRoles));

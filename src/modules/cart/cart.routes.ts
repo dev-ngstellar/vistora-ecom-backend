@@ -13,7 +13,8 @@ import {
 const cartRouter = Router();
 const cartController = new CartController();
 
-cartRouter.use(authenticate);
+cartRouter.use('/cart', authenticate);
+
 
 /**
  * @openapi

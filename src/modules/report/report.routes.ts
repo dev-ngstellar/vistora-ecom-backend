@@ -8,8 +8,12 @@ import { ReportController } from './report.controller';
 const reportRouter = Router();
 const reportController = new ReportController();
 
-reportRouter.use(authenticate);
-reportRouter.use(requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER));
+reportRouter.use(
+  '/reports',
+  authenticate,
+  requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER),
+);
+
 
 reportRouter.get('/reports/dashboard', asyncHandler(reportController.getDashboardAnalytics));
 reportRouter.get('/reports/sales', asyncHandler(reportController.getSalesReport));

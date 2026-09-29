@@ -8,7 +8,8 @@ import { CustomerController } from './customer.controller';
 const customerRouter = Router();
 const customerController = new CustomerController();
 
-customerRouter.use(authenticate);
+customerRouter.use('/customers', authenticate);
+
 
 // ==================== CUSTOMER SELF-SERVICE ADDRESS ROUTES ====================
 customerRouter.get('/customers/addresses', asyncHandler(customerController.getMyAddresses));

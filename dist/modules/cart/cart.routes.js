@@ -10,7 +10,7 @@ const cart_validation_1 = require("./cart.validation");
 const cartRouter = (0, express_1.Router)();
 exports.cartRouter = cartRouter;
 const cartController = new cart_controller_1.CartController();
-cartRouter.use(auth_middleware_1.authenticate);
+cartRouter.use('/cart', auth_middleware_1.authenticate);
 /**
  * @openapi
  * /cart:

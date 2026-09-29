@@ -8,8 +8,12 @@ import { AdminUserController } from './admin-user.controller';
 const adminUserRouter = Router();
 const adminUserController = new AdminUserController();
 
-adminUserRouter.use(authenticate);
-adminUserRouter.use(requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN));
+adminUserRouter.use(
+  '/admin/users',
+  authenticate,
+  requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+);
+
 
 adminUserRouter.get('/admin/users/stats', asyncHandler(adminUserController.getUserStats));
 adminUserRouter.get('/admin/users', asyncHandler(adminUserController.getAdminUsers));
