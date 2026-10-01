@@ -20,6 +20,7 @@ import { reportRouter } from '../modules/report/report.routes';
 import { reviewRouter } from '../modules/review/review.routes';
 import { roleRouter } from '../modules/role/role.routes';
 import { shippingRouter } from '../modules/shipping/shipping.routes';
+import { contactRouter } from '../modules/contact/contact.routes';
 import { uploadRouter } from '../modules/upload/upload.routes';
 import { wishlistRouter } from '../modules/wishlist/wishlist.routes';
 import { shippingConfigRouter } from '../modules/config/shipping-config.routes';
@@ -33,6 +34,7 @@ const apiRouter = Router();
 // Mount module routes
 apiRouter.use(healthRouter);
 apiRouter.use(authRouter);
+apiRouter.use(contactRouter);
 apiRouter.use(uploadRouter);
 apiRouter.use(inventoryRouter);
 apiRouter.use(notificationRouter);

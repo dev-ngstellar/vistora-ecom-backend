@@ -23,6 +23,7 @@ const report_routes_1 = require("../modules/report/report.routes");
 const review_routes_1 = require("../modules/review/review.routes");
 const role_routes_1 = require("../modules/role/role.routes");
 const shipping_routes_1 = require("../modules/shipping/shipping.routes");
+const contact_routes_1 = require("../modules/contact/contact.routes");
 const upload_routes_1 = require("../modules/upload/upload.routes");
 const wishlist_routes_1 = require("../modules/wishlist/wishlist.routes");
 const shipping_config_routes_1 = require("../modules/config/shipping-config.routes");
@@ -35,6 +36,7 @@ exports.apiRouter = apiRouter;
 // Mount module routes
 apiRouter.use(health_routes_1.healthRouter);
 apiRouter.use(auth_routes_1.authRouter);
+apiRouter.use(contact_routes_1.contactRouter);
 apiRouter.use(upload_routes_1.uploadRouter);
 apiRouter.use(inventory_routes_1.inventoryRouter);
 apiRouter.use(notification_routes_1.notificationRouter);

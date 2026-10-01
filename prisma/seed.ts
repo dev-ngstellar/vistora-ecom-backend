@@ -261,17 +261,17 @@ async function main(): Promise<void> {
   console.log('🌾 Seeding Pure Rice, Grain & Millet Products...');
 
   const productDataList = [
-    // ---------------- Subcategory 1: Varieties of Rice (6 Products) ----------------
+    // ---------------- Subcategory 1: Varieties of Rice ----------------
     {
-      name: 'Traditional Hand-Pounded Lean Rice (500g)',
-      slug: 'traditional-hand-pounded-lean-rice-500g',
+      name: 'Traditional Hand-Pounded Lean Rice',
+      slug: 'traditional-hand-pounded-lean-rice',
       sku: 'RICE-HPL-001',
       categoryId: subVarietiesOfRice.id,
       brandId: brandVistoraOrganics.id,
-      price: 110.00,
-      compareAtPrice: 140.00,
-      shortDescription: 'Minimally processed nutrient-rich Hand Pounded Lean Rice (500g).',
-      description: 'Hand pounded lean rice is a traditional, minimally processed rice variety that retains its natural bran, nutrients and authentic flavour. Rich in fiber, vitamins and minerals compared to polished rice, making it a healthier choice for you and your family.',
+      price: 53.00,
+      compareAtPrice: 65.00,
+      shortDescription: 'Minimally processed nutrient-rich Hand Pounded Lean Rice (கைக்குத்தல் அரிசி).',
+      description: 'Hand pounded lean rice (கைக்குத்தல் அரிசி) is a traditional, minimally processed rice variety that retains its natural bran, nutrients and authentic flavour. Rich in fiber, vitamins and minerals compared to polished rice, making it a healthier choice for you and your family.',
       images: [
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789621837/hand_pounded_lean_rice_front_image.webp',
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789621837/hand_pounded_lean_rice_back_image.webp',
@@ -279,18 +279,21 @@ async function main(): Promise<void> {
       ],
       color: 'Lean Brown',
       colorHex: '#C4A482',
-      stock: 50,
+      variants: [
+        { size: '500g', weight: 0.5, price: 53.00, compareAtPrice: 65.00, stock: 50, skuSuffix: '500G' },
+        { size: '1kg', weight: 1.0, price: 105.00, compareAtPrice: 130.00, stock: 50, skuSuffix: '1KG' },
+      ],
     },
     {
-      name: 'Heritage Karuppu Kavuni Black Rice (Emperor’s Rice) - 1kg',
-      slug: 'heritage-karuppu-kavuni-black-rice-1kg',
+      name: 'Heritage Karuppu Kavuni Black Rice',
+      slug: 'heritage-karuppu-kavuni-black-rice',
       sku: 'RCE-KVN-005',
       categoryId: subVarietiesOfRice.id,
       brandId: brandVistoraOrganics.id,
-      price: 160.00,
-      compareAtPrice: 200.00,
-      shortDescription: 'Ancient Chettinad royal Black Rice packed with anthocyanin antioxidants (1kg).',
-      description: 'Known as Emperor’s Forbidden Rice. Revered for powerful antioxidant properties, deep nutty flavor, and wholesome detox sweet porridge and pongal.',
+      price: 71.00,
+      compareAtPrice: 90.00,
+      shortDescription: 'Ancient Chettinad royal Black Rice (கருப்புகவனி) packed with anthocyanin antioxidants.',
+      description: 'Known as Emperor’s Forbidden Rice (கருப்புகவனி). Revered for powerful antioxidant properties, deep nutty flavor, and wholesome detox sweet porridge and pongal.',
       images: [
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017708/Black_rice_front_image.jpg.jpg',
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017708/Blace_rice_back_image.jpg.jpg',
@@ -298,18 +301,21 @@ async function main(): Promise<void> {
       ],
       color: 'Anthocyanin Black',
       colorHex: '#1A1110',
-      stock: 45,
+      variants: [
+        { size: '500g', weight: 0.5, price: 71.00, compareAtPrice: 90.00, stock: 45, skuSuffix: '500G' },
+        { size: '1kg', weight: 1.0, price: 142.00, compareAtPrice: 175.00, stock: 45, skuSuffix: '1KG' },
+      ],
     },
     {
-      name: 'Mappillai Samba Heritage Red Rice (Bridegroom Rice) - 1kg',
-      slug: 'mappillai-samba-heritage-red-rice-1kg',
+      name: 'Mappillai Samba Heritage Red Rice',
+      slug: 'mappillai-samba-heritage-red-rice',
       sku: 'RCE-MPL-006',
       categoryId: subVarietiesOfRice.id,
       brandId: brandVistoraOrganics.id,
-      price: 140.00,
-      compareAtPrice: 175.00,
-      shortDescription: 'Legendary Tamil Nadu strength & stamina red heritage rice (1kg).',
-      description: 'High-zinc and iron unpolished red bran rice. Known traditionally to boost vigor, strengthen immunity, and provide sustained stamina throughout the day.',
+      price: 44.00,
+      compareAtPrice: 55.00,
+      shortDescription: 'Legendary Tamil Nadu strength & stamina red heritage rice (மாப்பிள்ளை சம்பா).',
+      description: 'High-zinc and iron unpolished red bran rice (மாப்பிள்ளை சம்பா). Known traditionally to boost vigor, strengthen immunity, and provide sustained stamina throughout the day.',
       images: [
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017711/maapillai_samba_front.webp',
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017712/mappilai_samba_back_11zon.jpg.jpg',
@@ -317,20 +323,23 @@ async function main(): Promise<void> {
       ],
       color: 'Ruby Red',
       colorHex: '#9B111E',
-      stock: 50,
+      variants: [
+        { size: '500g', weight: 0.5, price: 44.00, compareAtPrice: 55.00, stock: 50, skuSuffix: '500G' },
+        { size: '1kg', weight: 1.0, price: 87.00, compareAtPrice: 110.00, stock: 50, skuSuffix: '1KG' },
+      ],
     },
 
-    // ---------------- Subcategory 2: Other Grains & Millets (9 Products) ----------------
+    // ---------------- Subcategory 2: Other Grains & Millets ----------------
     {
-      name: 'Organic Native Ragi (Finger Millet) - 500g',
-      slug: 'organic-native-ragi-finger-millet-500g',
+      name: 'Organic Native Ragi (Finger Millet)',
+      slug: 'organic-native-ragi-finger-millet',
       sku: 'MLT-RAG-007',
       categoryId: subOtherGrains.id,
       brandId: brandVistoraOrganics.id,
-      price: 75.00,
-      compareAtPrice: 95.00,
-      shortDescription: 'High-calcium unpolished organic Finger Millet / Ragi (500g).',
-      description: 'Ragi (Finger Millet) is a traditional, nutrient-rich whole grain known for its high calcium, fiber and plant-based protein. It is naturally grown and a perfect choice for a healthy and balanced diet for all age groups.',
+      price: 34.00,
+      compareAtPrice: 45.00,
+      shortDescription: 'High-calcium unpolished organic Finger Millet / Ragi (ராகி).',
+      description: 'Ragi (Finger Millet / ராகி) is a traditional, nutrient-rich whole grain known for its high calcium, fiber and plant-based protein. It is naturally grown and a perfect choice for a healthy and balanced diet for all age groups.',
       images: [
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789621719/ragi_front_image.webp',
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789621806/kambu_back_image.webp',
@@ -338,18 +347,21 @@ async function main(): Promise<void> {
       ],
       color: 'Deep Maroon Brown',
       colorHex: '#5C1D24',
-      stock: 80,
+      variants: [
+        { size: '500g', weight: 0.5, price: 34.00, compareAtPrice: 45.00, stock: 80, skuSuffix: '500G' },
+        { size: '1kg', weight: 1.0, price: 68.00, compareAtPrice: 85.00, stock: 80, skuSuffix: '1KG' },
+      ],
     },
     {
-      name: 'Traditional Kambu Kurunai (Pearl Millet Grits) - 500g',
-      slug: 'traditional-kambu-kurunai-pearl-millet-grits-500g',
+      name: 'Traditional Kambu Kurunai (Pearl Millet Grits)',
+      slug: 'traditional-kambu-kurunai-pearl-millet-grits',
       sku: 'MLT-KKR-008',
       categoryId: subOtherGrains.id,
       brandId: brandVistoraOrganics.id,
-      price: 70.00,
-      compareAtPrice: 90.00,
-      shortDescription: 'Unpolished broken Pearl Millet Grits / Kambu Kurunai (500g).',
-      description: 'Pearl Millet Grits (Kambu) is a traditional, nutrient-rich grain known for its high fiber content, plant-based protein, essential minerals and slow-releasing energy. Ideal for porridge, upma, and adai.',
+      price: 28.00,
+      compareAtPrice: 35.00,
+      shortDescription: 'Unpolished broken Pearl Millet Grits / Kambu Kurunai (கம்பு குறுணை).',
+      description: 'Pearl Millet Grits (Kambu Kurunai / கம்பு குறுணை) is a traditional, nutrient-rich grain known for its high fiber content, plant-based protein, essential minerals and slow-releasing energy. Ideal for porridge, upma, and adai.',
       images: [
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789621806/kambu_kurunai_front_image.webp',
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789621806/kambu_back_image.webp',
@@ -357,18 +369,21 @@ async function main(): Promise<void> {
       ],
       color: 'Millet Speckled',
       colorHex: '#8F9779',
-      stock: 75,
+      variants: [
+        { size: '500g', weight: 0.5, price: 28.00, compareAtPrice: 35.00, stock: 75, skuSuffix: '500G' },
+        { size: '1kg', weight: 1.0, price: 56.00, compareAtPrice: 70.00, stock: 75, skuSuffix: '1KG' },
+      ],
     },
     {
-      name: 'Traditional Kambu (Pearl Millet / Bajra) - 1kg',
-      slug: 'traditional-kambu-pearl-millet-bajra-1kg',
+      name: 'Traditional Kambu (Pearl Millet / Bajra)',
+      slug: 'traditional-kambu-pearl-millet-bajra',
       sku: 'MLT-KMB-009',
       categoryId: subOtherGrains.id,
       brandId: brandVistoraOrganics.id,
-      price: 80.00,
-      compareAtPrice: 100.00,
-      shortDescription: 'High-iron energizing native Pearl Millet (Kambu) grains (1kg).',
-      description: 'Mineral powerhouse rich in iron, zinc, and calcium. Traditional staple for fermenting cooling summer Kambu Koozh, dosas, and nutritious flatbreads.',
+      price: 28.00,
+      compareAtPrice: 35.00,
+      shortDescription: 'High-iron energizing native Pearl Millet (கம்பு) grains.',
+      description: 'Mineral powerhouse rich in iron, zinc, and calcium (கம்பு). Traditional staple for fermenting cooling summer Kambu Koozh, dosas, and nutritious flatbreads.',
       images: [
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017709/kambu_front_image.webp',
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017709/kambu_back_image.webp',
@@ -376,36 +391,42 @@ async function main(): Promise<void> {
       ],
       color: 'Grey Green',
       colorHex: '#708090',
-      stock: 75,
+      variants: [
+        { size: '500g', weight: 0.5, price: 28.00, compareAtPrice: 35.00, stock: 75, skuSuffix: '500G' },
+        { size: '1kg', weight: 1.0, price: 56.00, compareAtPrice: 70.00, stock: 75, skuSuffix: '1KG' },
+      ],
     },
     {
-      name: 'Organic Red Cholam (Red Sorghum) - 1kg',
-      slug: 'organic-red-cholam-red-sorghum-1kg',
+      name: 'Organic Red Cholam (Red Sorghum)',
+      slug: 'organic-red-cholam-red-sorghum',
       sku: 'MLT-RCH-010',
       categoryId: subOtherGrains.id,
       brandId: brandVistoraOrganics.id,
-      price: 95.00,
-      compareAtPrice: 120.00,
-      shortDescription: 'Unpolished antioxidant-rich Red Cholam (Red Sorghum) whole grains (1kg).',
-      description: 'High in dietary fiber, polyphenols, and plant-based protein. Ideal for diabetic-friendly meals, traditional breakfast porridge (Koozh), and gluten-free rotis.',
+      price: 33.00,
+      compareAtPrice: 42.00,
+      shortDescription: 'Unpolished antioxidant-rich Red Cholam (சிவப்பு சோளம்) whole grains.',
+      description: 'High in dietary fiber, polyphenols, and plant-based protein (சிவப்பு சோளம்). Ideal for diabetic-friendly meals, traditional breakfast porridge (Koozh), and gluten-free rotis.',
       images: [
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017712/Red_cholam_front.jpg.jpg',
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017712/Red_cholam_3rd_image.jpg.jpg',
       ],
       color: 'Red Sorghum',
       colorHex: '#8B2500',
-      stock: 60,
+      variants: [
+        { size: '500g', weight: 0.5, price: 33.00, compareAtPrice: 42.00, stock: 60, skuSuffix: '500G' },
+        { size: '1kg', weight: 1.0, price: 66.00, compareAtPrice: 80.00, stock: 60, skuSuffix: '1KG' },
+      ],
     },
     {
-      name: 'Organic White Cholam (White Jowar) - 1kg',
-      slug: 'organic-white-cholam-white-jowar-1kg',
+      name: 'Organic White Cholam (White Jowar)',
+      slug: 'organic-white-cholam-white-jowar',
       sku: 'MLT-WCH-011',
       categoryId: subOtherGrains.id,
       brandId: brandVistoraOrganics.id,
-      price: 85.00,
-      compareAtPrice: 110.00,
-      shortDescription: 'Premium gluten-free White Cholam (Jowar) whole grains (1kg).',
-      description: 'Rich in essential minerals including magnesium, copper, and calcium. Ground fresh for soft, nutritious jowar bhakri, rotis, and wholesome grain bowls.',
+      price: 29.00,
+      compareAtPrice: 38.00,
+      shortDescription: 'Premium gluten-free White Cholam (வெள்ளை சோளம்) whole grains.',
+      description: 'Rich in essential minerals including magnesium, copper, and calcium (வெள்ளை சோளம்). Ground fresh for soft, nutritious jowar bhakri, rotis, and wholesome grain bowls.',
       images: [
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017712/White_cholam_Front.jpg',
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017712/White_cholam_back_image.jpg',
@@ -413,18 +434,21 @@ async function main(): Promise<void> {
       ],
       color: 'Pearl Ivory',
       colorHex: '#FFFFF0',
-      stock: 55,
+      variants: [
+        { size: '500g', weight: 0.5, price: 29.00, compareAtPrice: 38.00, stock: 55, skuSuffix: '500G' },
+        { size: '1kg', weight: 1.0, price: 57.00, compareAtPrice: 72.00, stock: 55, skuSuffix: '1KG' },
+      ],
     },
     {
-      name: 'Traditional Saamai (Little Millet) - 1kg',
-      slug: 'traditional-saamai-little-millet-1kg',
+      name: 'Traditional Saamai (Little Millet)',
+      slug: 'traditional-saamai-little-millet',
       sku: 'MLT-SMA-012',
       categoryId: subOtherGrains.id,
       brandId: brandVistoraOrganics.id,
-      price: 105.00,
-      compareAtPrice: 135.00,
-      shortDescription: 'Unpolished native Little Millet (Saamai) for healthy daily meals (1kg).',
-      description: 'Packed with B-complex vitamins, iron, and dietary fiber. A delicious low-glycemic replacement for white rice in Pongal, Khichdi, and Upma.',
+      price: 99.00,
+      compareAtPrice: 125.00,
+      shortDescription: 'Unpolished native Little Millet (சாமை) for healthy daily meals.',
+      description: 'Packed with B-complex vitamins, iron, and dietary fiber (சாமை). A delicious low-glycemic replacement for white rice in Pongal, Khichdi, and Upma.',
       images: [
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017708/Saamai_front_image_11zon.jpg.jpg',
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017708/Saamai_back_image_11zon.jpg.jpg',
@@ -432,18 +456,21 @@ async function main(): Promise<void> {
       ],
       color: 'Pale Golden',
       colorHex: '#EEE8AA',
-      stock: 70,
+      variants: [
+        { size: '500g', weight: 0.5, price: 99.00, compareAtPrice: 125.00, stock: 70, skuSuffix: '500G' },
+        { size: '1kg', weight: 1.0, price: 197.00, compareAtPrice: 245.00, stock: 70, skuSuffix: '1KG' },
+      ],
     },
     {
-      name: 'Organic Thinai (Foxtail Millet) - 1kg',
-      slug: 'organic-thinai-foxtail-millet-1kg',
+      name: 'Organic Thinai (Foxtail Millet)',
+      slug: 'organic-thinai-foxtail-millet',
       sku: 'MLT-THN-013',
       categoryId: subOtherGrains.id,
       brandId: brandVistoraOrganics.id,
-      price: 110.00,
-      compareAtPrice: 140.00,
-      shortDescription: 'Nutrient-dense unpolished Foxtail Millet (Thinai) (1kg).',
-      description: 'High in protein and dietary fiber, supports steady glucose control and heart health. Perfect for millet payasam, idli batter, and quick pulao.',
+      price: 50.00,
+      compareAtPrice: 65.00,
+      shortDescription: 'Nutrient-dense unpolished Foxtail Millet (திணை).',
+      description: 'High in protein and dietary fiber (திணை), supports steady glucose control and heart health. Perfect for millet payasam, idli batter, and quick pulao.',
       images: [
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017709/Thinai_front_image_11zon.jpg.jpg',
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017709/Thinai_back_image_11zon.jpg.jpg',
@@ -451,18 +478,21 @@ async function main(): Promise<void> {
       ],
       color: 'Golden Yellow',
       colorHex: '#FFD700',
-      stock: 65,
+      variants: [
+        { size: '500g', weight: 0.5, price: 50.00, compareAtPrice: 65.00, stock: 65, skuSuffix: '500G' },
+        { size: '1kg', weight: 1.0, price: 100.00, compareAtPrice: 125.00, stock: 65, skuSuffix: '1KG' },
+      ],
     },
     {
-      name: 'Organic Native Kollu (Horse Gram) - 1kg',
-      slug: 'organic-native-kollu-horse-gram-1kg',
+      name: 'Organic Native Kollu (Horse Gram)',
+      slug: 'organic-native-kollu-horse-gram',
       sku: 'PL-KLU-014',
       categoryId: subOtherGrains.id,
       brandId: brandVistoraOrganics.id,
-      price: 90.00,
-      compareAtPrice: 115.00,
-      shortDescription: 'High-protein super-pulse Horse Gram for stamina & metabolism (1kg).',
-      description: 'Traditional super-pulse rich in iron, polyphenols, and plant protein. Renowned in Ayurvedic cooking for medicinal soup (Kollu Rasam) and weight management.',
+      price: 47.00,
+      compareAtPrice: 60.00,
+      shortDescription: 'High-protein super-pulse Horse Gram (கொள்ளு) for stamina & metabolism.',
+      description: 'Traditional super-pulse rich in iron, polyphenols, and plant protein (கொள்ளு). Renowned in Ayurvedic cooking for medicinal soup (Kollu Rasam) and weight management.',
       images: [
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017711/kollu_frontside.webp',
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017711/kollu_backside.webp',
@@ -470,18 +500,21 @@ async function main(): Promise<void> {
       ],
       color: 'Rust Brown',
       colorHex: '#8B4513',
-      stock: 80,
+      variants: [
+        { size: '500g', weight: 0.5, price: 47.00, compareAtPrice: 60.00, stock: 80, skuSuffix: '500G' },
+        { size: '1kg', weight: 1.0, price: 93.00, compareAtPrice: 115.00, stock: 80, skuSuffix: '1KG' },
+      ],
     },
     {
-      name: 'Organic Varagu (Kodo Millet) - 1kg',
-      slug: 'organic-varagu-kodo-millet-1kg',
+      name: 'Organic Varagu (Kodo Millet)',
+      slug: 'organic-varagu-kodo-millet',
       sku: 'MLT-VRG-015',
       categoryId: subOtherGrains.id,
       brandId: brandVistoraOrganics.id,
-      price: 105.00,
-      compareAtPrice: 135.00,
-      shortDescription: 'Low-glycemic unpolished Kodo Millet (Varagu) for gut wellness (1kg).',
-      description: 'Rich in lecithin and dietary fiber. Light on digestion, stabilizes blood sugar levels, and cooks into fluffy rice dishes, upma, and bisi bele bath.',
+      price: 51.00,
+      compareAtPrice: 65.00,
+      shortDescription: 'Low-glycemic unpolished Kodo Millet (வரகு) for gut wellness.',
+      description: 'Rich in lecithin and dietary fiber (வரகு). Light on digestion, stabilizes blood sugar levels, and cooks into fluffy rice dishes, upma, and bisi bele bath.',
       images: [
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017711/varugu_front_image_11zon.jpg.jpg',
         'https://res.cloudinary.com/ggvs7siw/image/upload/v1789017710/varagu_back_image_11zon.jpg.jpg',
@@ -489,7 +522,10 @@ async function main(): Promise<void> {
       ],
       color: 'Buff Brown',
       colorHex: '#D2B48C',
-      stock: 65,
+      variants: [
+        { size: '500g', weight: 0.5, price: 51.00, compareAtPrice: 65.00, stock: 65, skuSuffix: '500G' },
+        { size: '1kg', weight: 1.0, price: 102.00, compareAtPrice: 130.00, stock: 65, skuSuffix: '1KG' },
+      ],
     },
   ];
 
@@ -516,29 +552,31 @@ async function main(): Promise<void> {
           })),
         },
         variants: {
-          create: [
-            {
-              sku: `${item.sku}-DEFAULT`,
-              color: item.color,
-              colorHex: item.colorHex,
-              price: item.price,
-              compareAtPrice: item.compareAtPrice,
-              stock: item.stock,
-            },
-          ],
+          create: item.variants.map((v) => ({
+            sku: `${item.sku}-${v.skuSuffix}`,
+            size: v.size,
+            weight: v.weight,
+            color: item.color,
+            colorHex: item.colorHex,
+            price: v.price,
+            compareAtPrice: v.compareAtPrice,
+            stock: v.stock,
+          })),
         },
+      },
+      include: {
+        variants: true,
       },
     });
 
-    // Create inventory record linked to default variant
-    const variant = await prisma.productVariant.findFirst({ where: { productId: product.id } });
-    if (variant) {
+    // Create inventory record linked to each variant
+    for (const variant of product.variants) {
       await prisma.inventory.create({
         data: {
           productId: product.id,
           variantId: variant.id,
           sku: variant.sku,
-          availableStock: item.stock,
+          availableStock: variant.stock,
           minimumStock: 5,
           reorderLevel: 10,
         },
@@ -546,7 +584,7 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log(`✅ Successfully seeded ${productDataList.length} pure Rice & Grain products!`);
+  console.log(`✅ Successfully seeded ${productDataList.length} pure Rice & Grain products with 500g & 1kg variants!`);
 
   // 9. Seed Coupons
   console.log('🎟️ Seeding Coupons...');
@@ -573,8 +611,8 @@ async function main(): Promise<void> {
   const customer1 = createdCustomers[0];
   if (customer1) {
     const addr1 = await prisma.address.findFirst({ where: { userId: customer1.id } });
-    const sampleRice = await prisma.product.findFirst({ where: { slug: 'traditional-hand-pounded-lean-rice-500g' } });
-    const sampleRagi = await prisma.product.findFirst({ where: { slug: 'organic-native-ragi-finger-millet-500g' } });
+    const sampleRice = await prisma.product.findFirst({ where: { slug: 'traditional-hand-pounded-lean-rice' } });
+    const sampleRagi = await prisma.product.findFirst({ where: { slug: 'organic-native-ragi-finger-millet' } });
 
     if (addr1 && sampleRice && sampleRagi) {
       const varRice = await prisma.productVariant.findFirst({ where: { productId: sampleRice.id } });
@@ -587,11 +625,11 @@ async function main(): Promise<void> {
           orderNumber: 'ORD-2026-1001',
           userId: customer1.id,
           addressId: addr1.id,
-          subtotal: 185.00,
-          discount: 18.50,
-          tax: 8.32,
+          subtotal: 87.00,
+          discount: 8.70,
+          tax: 3.91,
           shipping: 40.00,
-          total: 214.82,
+          total: 122.21,
           status: OrderStatus.DELIVERED,
           notes: 'Eco-friendly paper pouch packaging requested.',
           items: {
@@ -600,23 +638,23 @@ async function main(): Promise<void> {
                 productId: sampleRice.id,
                 variantId: varRice?.id,
                 productName: sampleRice.name,
-                sku: sampleRice.sku,
+                sku: varRice?.sku || sampleRice.sku,
                 quantity: 1,
-                unitPrice: 110.00,
-                discount: 11.00,
-                tax: 4.95,
-                total: 103.95,
+                unitPrice: 53.00,
+                discount: 5.30,
+                tax: 2.38,
+                total: 50.08,
               },
               {
                 productId: sampleRagi.id,
                 variantId: varRagi?.id,
                 productName: sampleRagi.name,
-                sku: sampleRagi.sku,
+                sku: varRagi?.sku || sampleRagi.sku,
                 quantity: 1,
-                unitPrice: 75.00,
-                discount: 7.50,
-                tax: 3.37,
-                total: 70.87,
+                unitPrice: 34.00,
+                discount: 3.40,
+                tax: 1.53,
+                total: 32.13,
               },
             ],
           },
