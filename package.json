@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch -r tsconfig-paths/register src/server.ts",
-    "build": "tsc --project tsconfig.json && tsc-alias",
+    "build": "node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc --project tsconfig.json && tsc-alias",
     "start": "node dist/server.js",
     "lint": "eslint \"src/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
