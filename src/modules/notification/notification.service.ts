@@ -49,7 +49,7 @@ export class NotificationService {
                   type: NotificationType.ORDER,
                   title: 'New Customer Order Placed',
                   message: `Order #${o.orderNumber} placed by ${cust} (₹${Number(o.total).toFixed(2)})`,
-                  actionUrl: `/admin/orders/${o.id}`,
+                  actionUrl: '/admin/orders',
                   status: NotificationStatus.UNREAD,
                   createdAt: o.createdAt,
                 };
@@ -177,7 +177,7 @@ export class NotificationService {
             type: NotificationType.ORDER,
             title: 'New Customer Order Placed',
             message: `Order #${order.orderNumber} placed by ${resolvedCustomerName || 'Customer'} (₹${Number(order.total).toFixed(2)})`,
-            actionUrl: `/admin/orders/${order.id}`,
+            actionUrl: '/admin/orders',
             status: NotificationStatus.UNREAD,
           })),
         });
@@ -206,7 +206,7 @@ export class NotificationService {
             type: NotificationType.PAYMENT,
             title: 'Payment Verified & Captured',
             message: `Payment of ₹${Number(order.total).toFixed(2)} captured for Order #${order.orderNumber}`,
-            actionUrl: `/admin/orders/${order.id}`,
+            actionUrl: '/admin/orders',
             status: NotificationStatus.UNREAD,
           })),
         });
