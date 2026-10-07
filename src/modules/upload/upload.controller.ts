@@ -55,7 +55,7 @@ const uploadBufferToCloudinary = (
           { fetch_format: 'auto' },
         ],
       },
-      (error, result) => {
+      (error: any, result: any) => {
         if (error || !result) {
           logger.error({ err: error }, 'Cloudinary upload error');
           return reject(error || new Error('Cloudinary upload failed'));

@@ -151,7 +151,7 @@ class MailService {
       logger.info({ messageId: adminInfo.messageId }, 'Contact inquiry email sent to Vistora Support');
 
       // Send customer acknowledgement in background
-      transporter.sendMail(customerAckOptions).catch((err) => {
+      transporter.sendMail(customerAckOptions).catch((err: any) => {
         logger.warn({ err }, 'Failed sending customer contact acknowledgement');
       });
 
@@ -244,7 +244,7 @@ class MailService {
       const subInfo = await transporter.sendMail(subscriberMailOptions);
       logger.info({ messageId: subInfo.messageId, email }, 'Newsletter welcome email sent via Nodemailer');
 
-      transporter.sendMail(adminNotificationOptions).catch((err) => {
+      transporter.sendMail(adminNotificationOptions).catch((err: any) => {
         logger.warn({ err }, 'Failed sending newsletter admin notification');
       });
 
