@@ -16,7 +16,7 @@ export interface NewsletterPayload {
 
 class MailService {
   private transporter: Transporter | null = null;
-  private primaryAdminEmail = 'sainithish2710@gmail.com';
+  private primaryAdminEmail = process.env.ADMIN_EMAIL || 'vistoraoffice123@gmail.com';
   private officialSupportEmail = 'vistoraoffice123@gmail.com';
 
   private getTransporter(): Transporter {
