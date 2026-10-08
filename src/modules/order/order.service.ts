@@ -2,7 +2,9 @@ import { OrderStatus } from '@prisma/client';
 import { OrderQueryFilters, OrderRepository } from '../../repositories/order.repository';
 import { ApiError } from '../../utils/api-error.util';
 import { prisma } from '../../config/prisma.config';
+import { logger } from '../../config/logger.config';
 import { NotificationService } from '../notification/notification.service';
+import { mailService } from '../../services/mail.service';
 
 export class OrderService {
   private orderRepository: OrderRepository;
@@ -288,7 +290,7 @@ export class OrderService {
     }
 
     const taxableAmount = Math.max(0, subtotal - discount);
-    const shipping = subtotal >= 150 ? 0 : 15;
+    const shipping = 0; // Free shipping
     const tax = parseFloat((taxableAmount * 0.05).toFixed(2)); // 5% tax
     const total = parseFloat((taxableAmount + shipping + tax).toFixed(2));
 
@@ -386,6 +388,11 @@ export class OrderService {
 
     // Asynchronously dispatch real-time admin notification
     this.notificationService.createOrderNotification(order).catch(() => {});
+    if (input.paymentMethod === 'COD') {
+      mailService.sendAdminOrderSuccessNotification(order.id).catch((err) => {
+        logger.error({ err }, 'Failed sending admin order email notification for COD order');
+      });
+    }
 
     return order;
   }
@@ -425,6 +432,10 @@ export class OrderService {
     await prisma.order.update({
       where: { id: input.orderId },
       data: { status: 'CONFIRMED' },
+    });
+
+    mailService.sendAdminOrderSuccessNotification(input.orderId).catch((err) => {
+      logger.error({ err }, 'Failed sending admin order email notification on verifyPayment');
     });
 
     return {

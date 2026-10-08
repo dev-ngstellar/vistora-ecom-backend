@@ -14,10 +14,13 @@ export interface NewsletterPayload {
   email: string;
 }
 
+import { prisma } from '../config/prisma.config';
+
 class MailService {
   private transporter: Transporter | null = null;
   private primaryAdminEmail = process.env.ADMIN_EMAIL || 'vistoraoffice123@gmail.com';
   private officialSupportEmail = 'vistoraoffice123@gmail.com';
+  private sentOrderNotificationIds = new Set<string>();
 
   private getTransporter(): Transporter {
     if (this.transporter) {
@@ -252,6 +255,209 @@ class MailService {
     } catch (err: any) {
       logger.error({ err }, 'Error sending newsletter welcome email via Nodemailer');
       return { success: true };
+    }
+  }
+
+  /**
+   * Send Order Confirmation Email to Admin upon successful order/payment
+   */
+  public async sendAdminOrderSuccessNotification(
+    orderIdOrData: string | any,
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      let order: any = null;
+      if (typeof orderIdOrData === 'string') {
+        order = await prisma.order.findUnique({
+          where: { id: orderIdOrData },
+          include: {
+            user: true,
+            address: true,
+            items: true,
+            payments: true,
+          },
+        });
+      } else if (orderIdOrData && orderIdOrData.id) {
+        if (orderIdOrData.items && orderIdOrData.address && orderIdOrData.user) {
+          order = orderIdOrData;
+        } else {
+          order = await prisma.order.findUnique({
+            where: { id: orderIdOrData.id },
+            include: {
+              user: true,
+              address: true,
+              items: true,
+              payments: true,
+            },
+          });
+        }
+      }
+
+      if (!order) {
+        logger.warn({ orderIdOrData }, 'Cannot send admin order email: Order not found');
+        return { success: false, error: 'Order not found' };
+      }
+
+      // Avoid duplicate emails for the same order
+      if (this.sentOrderNotificationIds.has(order.id)) {
+        logger.info(
+          { orderId: order.id, orderNumber: order.orderNumber },
+          'Admin order notification already sent, skipping duplicate',
+        );
+        return { success: true };
+      }
+      this.sentOrderNotificationIds.add(order.id);
+
+      const transporter = this.getTransporter();
+
+      const customerName = order.user
+        ? `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim() || order.user.email
+        : order.address?.recipientName || 'Customer';
+      const customerEmail = order.user?.email || order.address?.email || 'Not provided';
+      const customerPhone = order.address?.phone || order.user?.phone || 'Not provided';
+
+      const formattedAddress = order.address
+        ? [
+            order.address.addressLine1,
+            order.address.addressLine2,
+            order.address.city,
+            order.address.state,
+            order.address.postalCode,
+            order.address.country,
+          ]
+            .filter(Boolean)
+            .join(', ')
+        : 'Address not available';
+
+      const payment = order.payments?.[0];
+      const paymentMethod = payment?.paymentMethod || 'ONLINE';
+      const paymentStatus = payment?.status || order.status || 'CONFIRMED';
+      const transactionRef = payment?.transactionReference || payment?.gatewayPaymentId || null;
+
+      const itemsHtml = (order.items || [])
+        .map((item: any) => {
+          const unitPrice = Number(item.unitPrice || 0).toFixed(2);
+          const total = Number(
+            item.total || item.totalPrice || Number(item.unitPrice) * item.quantity,
+          ).toFixed(2);
+          return `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 10px; color: #1e293b; font-weight: 600;">${item.productName || 'Product'}</td>
+              <td style="padding: 10px; color: #64748b; font-family: monospace; font-size: 11px;">${item.sku || '—'}</td>
+              <td style="padding: 10px; text-align: center; color: #334155;">${item.quantity}</td>
+              <td style="padding: 10px; text-align: right; color: #334155;">₹${unitPrice}</td>
+              <td style="padding: 10px; text-align: right; font-weight: 700; color: #0f172a;">₹${total}</td>
+            </tr>
+          `;
+        })
+        .join('');
+
+      const adminOrderMailOptions = {
+        from: `"Vistora Orders" <${env.EMAIL_FROM || 'noreply@vistoracommerce.com'}>`,
+        to: 'vistoraoffice123@gmail.com',
+        cc: this.primaryAdminEmail !== 'vistoraoffice123@gmail.com' ? this.primaryAdminEmail : undefined,
+        subject: `[Vistora New Order] #${order.orderNumber} placed by ${customerName} (₹${Number(order.total).toFixed(2)})`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 24px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;">
+            <div style="background: linear-gradient(135deg, #A50025 0%, #700019 100%); padding: 24px; border-radius: 12px; text-align: center; margin-bottom: 24px;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 1px;">VISTORA</h1>
+              <p style="color: #ffd7aa; margin: 6px 0 0 0; font-size: 13px; font-weight: 700; text-transform: uppercase;">New Order Received 🎉</p>
+            </div>
+
+            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;">
+              <p style="margin: 0; font-size: 14px; font-weight: 600; color: #166534;">
+                ✅ Order <strong>#${order.orderNumber}</strong> has been successfully placed!
+              </p>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
+              <tr>
+                <td style="width: 50%; vertical-align: top; padding: 12px; background-color: #f8fafc; border-radius: 8px 0 0 8px;">
+                  <strong style="color: #0f172a; font-size: 14px; display: block; margin-bottom: 8px;">Customer Information</strong>
+                  <p style="margin: 2px 0; color: #334155;"><strong>Name:</strong> ${customerName}</p>
+                  <p style="margin: 2px 0; color: #334155;"><strong>Email:</strong> <a href="mailto:${customerEmail}" style="color: #A50025;">${customerEmail}</a></p>
+                  <p style="margin: 2px 0; color: #334155;"><strong>Phone:</strong> ${customerPhone}</p>
+                </td>
+                <td style="width: 50%; vertical-align: top; padding: 12px; background-color: #f8fafc; border-radius: 0 8px 8px 0;">
+                  <strong style="color: #0f172a; font-size: 14px; display: block; margin-bottom: 8px;">Delivery Address</strong>
+                  <p style="margin: 2px 0; color: #334155;">${formattedAddress}</p>
+                </td>
+              </tr>
+            </table>
+
+            <h3 style="color: #0f172a; font-size: 15px; margin: 16px 0 10px 0;">Order Items</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
+              <thead>
+                <tr style="background-color: #f1f5f9; text-align: left;">
+                  <th style="padding: 10px; border-bottom: 2px solid #e2e8f0; color: #475569;">Item</th>
+                  <th style="padding: 10px; border-bottom: 2px solid #e2e8f0; color: #475569;">SKU</th>
+                  <th style="padding: 10px; border-bottom: 2px solid #e2e8f0; color: #475569; text-align: center;">Qty</th>
+                  <th style="padding: 10px; border-bottom: 2px solid #e2e8f0; color: #475569; text-align: right;">Price</th>
+                  <th style="padding: 10px; border-bottom: 2px solid #e2e8f0; color: #475569; text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <div style="background-color: #f8fafc; border-radius: 8px; padding: 14px 16px; margin-bottom: 24px;">
+              <table style="width: 100%; font-size: 13px; color: #334155;">
+                <tr>
+                  <td style="padding: 4px 0;">Subtotal:</td>
+                  <td style="padding: 4px 0; text-align: right; font-weight: 600;">₹${Number(order.subtotal).toFixed(2)}</td>
+                </tr>
+                ${Number(order.discount) > 0 ? `
+                <tr style="color: #16a34a;">
+                  <td style="padding: 4px 0;">Discount:</td>
+                  <td style="padding: 4px 0; text-align: right; font-weight: 600;">-₹${Number(order.discount).toFixed(2)}</td>
+                </tr>` : ''}
+                <tr>
+                  <td style="padding: 4px 0;">Shipping Fee:</td>
+                  <td style="padding: 4px 0; text-align: right; font-weight: 600;">${Number(order.shipping) === 0 ? 'FREE' : `₹${Number(order.shipping).toFixed(2)}`}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0;">Tax:</td>
+                  <td style="padding: 4px 0; text-align: right; font-weight: 600;">₹${Number(order.tax).toFixed(2)}</td>
+                </tr>
+                <tr style="border-top: 1px solid #cbd5e1; font-size: 16px; color: #0f172a;">
+                  <td style="padding: 10px 0 4px 0; font-weight: 800;">Grand Total:</td>
+                  <td style="padding: 10px 0 4px 0; text-align: right; font-weight: 900; color: #A50025;">₹${Number(order.total).toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; font-size: 12px; color: #64748b;">Payment Method:</td>
+                  <td style="padding: 4px 0; text-align: right; font-size: 12px; font-weight: 700; color: #0f172a;">${paymentMethod} (${paymentStatus})</td>
+                </tr>
+                ${transactionRef ? `
+                <tr>
+                  <td style="padding: 4px 0; font-size: 12px; color: #64748b;">Transaction Ref:</td>
+                  <td style="padding: 4px 0; text-align: right; font-size: 12px; font-family: monospace; color: #0f172a;">${transactionRef}</td>
+                </tr>` : ''}
+              </table>
+            </div>
+
+            <div style="text-align: center; margin: 24px 0 16px 0;">
+              <a href="http://localhost:3000/admin/orders" style="background-color: #A50025; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; display: inline-block;">
+                View Orders in Admin Dashboard →
+              </a>
+            </div>
+
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+              <p style="margin: 0 0 4px 0;">Vistora Commerce • Automated Admin Notification</p>
+              <p style="margin: 0;">Recipient: vistoraoffice123@gmail.com</p>
+            </div>
+          </div>
+        `,
+      };
+
+      const info = await transporter.sendMail(adminOrderMailOptions);
+      logger.info(
+        { messageId: info.messageId, orderNumber: order.orderNumber },
+        'Admin order notification email sent successfully to vistoraoffice123@gmail.com',
+      );
+      return { success: true, messageId: info.messageId };
+    } catch (err: any) {
+      logger.error({ err, orderIdOrData }, 'Error sending admin order notification email via Nodemailer');
+      return { success: false, error: err.message };
     }
   }
 }

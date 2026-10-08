@@ -5,6 +5,7 @@ import { logger } from '../../config/logger.config';
 import { RazorpayService } from './razorpay.service';
 import { OrderService } from '../order/order.service';
 import { NotificationService } from '../notification/notification.service';
+import { mailService } from '../../services/mail.service';
 
 export interface CreateRazorpayOrderPayload {
   orderId?: string;
@@ -217,8 +218,11 @@ export class PaymentService {
         }),
       ]);
 
-      // Trigger admin payment notification
+      // Trigger admin payment notification & email
       this.notificationService.createPaymentNotification(order).catch(() => {});
+      mailService.sendAdminOrderSuccessNotification(order.id).catch((err) => {
+        logger.error({ err }, 'Failed sending admin order email notification on payment verification');
+      });
 
       return {
         success: true,
@@ -242,6 +246,10 @@ export class PaymentService {
           data: { status: OrderStatus.CONFIRMED },
         }),
       ]);
+
+      mailService.sendAdminOrderSuccessNotification(order.id).catch((err) => {
+        logger.error({ err }, 'Failed sending admin order email notification on COD verification');
+      });
 
       return {
         success: true,
@@ -309,6 +317,9 @@ export class PaymentService {
             }),
           ]);
           logger.info(`Order #${payment.order.orderNumber} successfully confirmed via webhook reconciliation`);
+          mailService.sendAdminOrderSuccessNotification(payment.orderId).catch((err) => {
+            logger.error({ err }, 'Failed sending admin order email notification on webhook reconciliation');
+          });
         }
       }
     } else if (event === 'payment.failed') {

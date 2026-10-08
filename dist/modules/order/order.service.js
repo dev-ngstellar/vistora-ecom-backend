@@ -5,7 +5,9 @@ const client_1 = require("@prisma/client");
 const order_repository_1 = require("../../repositories/order.repository");
 const api_error_util_1 = require("../../utils/api-error.util");
 const prisma_config_1 = require("../../config/prisma.config");
+const logger_config_1 = require("../../config/logger.config");
 const notification_service_1 = require("../notification/notification.service");
+const mail_service_1 = require("../../services/mail.service");
 class OrderService {
     orderRepository;
     notificationService;
@@ -241,7 +243,7 @@ class OrderService {
             }
         }
         const taxableAmount = Math.max(0, subtotal - discount);
-        const shipping = subtotal >= 150 ? 0 : 15;
+        const shipping = 0; // Free shipping
         const tax = parseFloat((taxableAmount * 0.05).toFixed(2)); // 5% tax
         const total = parseFloat((taxableAmount + shipping + tax).toFixed(2));
         const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
@@ -332,6 +334,11 @@ class OrderService {
         });
         // Asynchronously dispatch real-time admin notification
         this.notificationService.createOrderNotification(order).catch(() => { });
+        if (input.paymentMethod === 'COD') {
+            mail_service_1.mailService.sendAdminOrderSuccessNotification(order.id).catch((err) => {
+                logger_config_1.logger.error({ err }, 'Failed sending admin order email notification for COD order');
+            });
+        }
         return order;
     }
     // ==================== PAYMENT VERIFICATION ====================
@@ -359,6 +366,9 @@ class OrderService {
         await prisma_config_1.prisma.order.update({
             where: { id: input.orderId },
             data: { status: 'CONFIRMED' },
+        });
+        mail_service_1.mailService.sendAdminOrderSuccessNotification(input.orderId).catch((err) => {
+            logger_config_1.logger.error({ err }, 'Failed sending admin order email notification on verifyPayment');
         });
         return {
             success: true,

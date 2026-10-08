@@ -4,10 +4,10 @@ exports.ShippingService = void 0;
 class ShippingService {
     async estimateShipping(input) {
         const { subtotal } = input;
-        const freeShippingThreshold = 150.0;
-        const isFreeEligible = subtotal >= freeShippingThreshold;
-        const amountNeeded = isFreeEligible ? 0 : Number((freeShippingThreshold - subtotal).toFixed(2));
-        const standardCost = isFreeEligible ? 0 : 15.0;
+        const freeShippingThreshold = 0.0;
+        const isFreeEligible = true;
+        const amountNeeded = 0;
+        const standardCost = 0.0;
         const methods = [
             {
                 id: 'standard-delivery',

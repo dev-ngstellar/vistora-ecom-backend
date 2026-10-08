@@ -10,8 +10,8 @@ import {
 } from './cart.types';
 
 const TAX_RATE = 0.08; // 8% sales tax
-const STANDARD_SHIPPING_FEE = 15.0; // $15 standard shipping
-const FREE_SHIPPING_THRESHOLD = 150.0; // Free shipping for orders >= $150
+const STANDARD_SHIPPING_FEE = 0.0; // Free shipping
+const FREE_SHIPPING_THRESHOLD = 0.0; // Free shipping
 
 export class CartService {
   private readonly cartRepository: CartRepository;
