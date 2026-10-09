@@ -6,14 +6,16 @@ exports.registerSchema = zod_1.z.object({
     body: zod_1.z.object({
         firstName: zod_1.z
             .string({ required_error: 'First name is required' })
+            .trim()
             .min(2, 'First name must be at least 2 characters')
             .max(50, 'First name cannot exceed 50 characters')
-            .trim(),
+            .regex(/^[a-zA-Z\s.'-]+$/, 'First name must contain only letters'),
         lastName: zod_1.z
             .string({ required_error: 'Last name is required' })
+            .trim()
             .min(2, 'Last name must be at least 2 characters')
             .max(50, 'Last name cannot exceed 50 characters')
-            .trim(),
+            .regex(/^[a-zA-Z\s.'-]+$/, 'Last name must contain only letters'),
         email: zod_1.z
             .string({ required_error: 'Email address is required' })
             .email('Invalid email address format')
@@ -26,8 +28,11 @@ exports.registerSchema = zod_1.z.object({
             .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
         phone: zod_1.z
             .string()
-            .regex(/^[0-9]{10,15}$/, 'Phone number must contain between 10 and 15 digits')
-            .optional(),
+            .trim()
+            .regex(/^[6-9]\d{9}$/, 'Phone number must be a valid 10-digit mobile number')
+            .optional()
+            .or(zod_1.z.literal(''))
+            .nullish(),
     }),
 });
 exports.loginSchema = zod_1.z.object({
