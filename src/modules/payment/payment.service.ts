@@ -61,14 +61,38 @@ export class PaymentService {
         throw ApiError.badRequest('This order has already been paid and confirmed');
       }
     } else if (input.addressId) {
-      // 2. Full checkout initiation with server-side pricing
-      order = await this.orderService.createCustomerOrder(userId, {
-        addressId: input.addressId,
-        paymentMethod: PaymentMethod.RAZORPAY,
-        couponCode: input.couponCode,
-        notes: input.notes,
-        items: input.items,
+      // Check if user has an existing recent PENDING Razorpay order for this address
+      const existingPending = await prisma.order.findFirst({
+        where: {
+          userId,
+          status: OrderStatus.PENDING,
+          addressId: input.addressId,
+          payments: {
+            some: {
+              paymentMethod: PaymentMethod.RAZORPAY,
+              status: PaymentStatus.PENDING,
+            },
+          },
+          createdAt: {
+            gte: new Date(Date.now() - 15 * 60 * 1000), // within last 15 mins
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        include: { payments: true, user: true },
       });
+
+      if (existingPending) {
+        order = existingPending;
+      } else {
+        // Full checkout initiation with server-side pricing
+        order = await this.orderService.createCustomerOrder(userId, {
+          addressId: input.addressId,
+          paymentMethod: PaymentMethod.RAZORPAY,
+          couponCode: input.couponCode,
+          notes: input.notes,
+          items: input.items,
+        });
+      }
     } else {
       throw ApiError.badRequest('Either orderId or addressId must be provided to create a payment order');
     }
@@ -316,6 +340,14 @@ export class PaymentService {
               },
             }),
           ]);
+          // Clear customer cart upon successful payment confirmation via webhook
+          if (payment.order.userId) {
+            const userCart = await prisma.cart.findUnique({ where: { userId: payment.order.userId } });
+            if (userCart) {
+              await prisma.cartItem.deleteMany({ where: { cartId: userCart.id } });
+            }
+          }
+
           logger.info(`Order #${payment.order.orderNumber} successfully confirmed via webhook reconciliation`);
           mailService.sendAdminOrderSuccessNotification(payment.orderId).catch((err) => {
             logger.error({ err }, 'Failed sending admin order email notification on webhook reconciliation');

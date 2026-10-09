@@ -385,8 +385,10 @@ export class OrderService {
         }
       }
 
-      // Clear user cart items if not a custom Buy Now order
-      if (!input.items || input.items.length === 0) {
+      // Clear user cart items ONLY for Cash on Delivery (COD) orders upon initial placement.
+      // For online payment gateways (Razorpay, Stripe), cart items must remain intact
+      // until payment is successfully completed and verified.
+      if (input.paymentMethod === 'COD' && (!input.items || input.items.length === 0)) {
         const cart = await tx.cart.findUnique({ where: { userId } });
         if (cart) {
           await tx.cartItem.deleteMany({
@@ -445,6 +447,16 @@ export class OrderService {
       where: { id: input.orderId },
       data: { status: 'CONFIRMED' },
     });
+
+    // Clear user cart items now that online payment is verified and completed successfully
+    if (order.userId) {
+      const cart = await prisma.cart.findUnique({ where: { userId: order.userId } });
+      if (cart) {
+        await prisma.cartItem.deleteMany({
+          where: { cartId: cart.id },
+        });
+      }
+    }
 
     mailService.sendAdminOrderSuccessNotification(input.orderId).catch((err) => {
       logger.error({ err }, 'Failed sending admin order email notification on verifyPayment');
