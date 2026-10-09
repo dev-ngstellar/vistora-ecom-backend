@@ -54,6 +54,9 @@ export interface CartSummaryResponse {
   subtotal: number;
   discount: number;
   tax: number;
+  taxRate?: number;
+  taxLabel?: string;
+  taxInclusive?: boolean;
   shipping: number;
   total: number;
   itemCount: number;

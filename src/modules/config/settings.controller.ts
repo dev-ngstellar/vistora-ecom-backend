@@ -38,3 +38,11 @@ export const deleteSetting = async (req: Request, res: Response) => {
   await settingsService.deleteSetting(key, userId(req), ip(req));
   return ApiResponseHandler.success(res, HTTP_STATUS.OK, 'Setting deleted', null);
 };
+
+export const getPublicSettings = async (_req: Request, res: Response) => {
+  const tax = await settingsService.getTaxSettings();
+  return ApiResponseHandler.success(res, HTTP_STATUS.OK, 'Public settings retrieved', {
+    tax,
+  });
+};
+

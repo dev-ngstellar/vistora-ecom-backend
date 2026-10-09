@@ -8,6 +8,7 @@ const prisma_config_1 = require("../../config/prisma.config");
 const logger_config_1 = require("../../config/logger.config");
 const notification_service_1 = require("../notification/notification.service");
 const mail_service_1 = require("../../services/mail.service");
+const settings_service_1 = require("../config/settings.service");
 class OrderService {
     orderRepository;
     notificationService;
@@ -242,10 +243,19 @@ class OrderService {
                 }
             }
         }
+        const taxConfig = await (0, settings_service_1.getTaxSettings)();
+        const taxRate = Number(taxConfig.taxRate) || 0;
+        const taxInclusive = Boolean(taxConfig.taxInclusive);
         const taxableAmount = Math.max(0, subtotal - discount);
         const shipping = 0; // Free shipping
-        const tax = parseFloat((taxableAmount * 0.05).toFixed(2)); // 5% tax
-        const total = parseFloat((taxableAmount + shipping + tax).toFixed(2));
+        let tax = 0;
+        if (taxInclusive) {
+            tax = parseFloat(((taxableAmount * taxRate) / (100 + taxRate)).toFixed(2));
+        }
+        else {
+            tax = parseFloat(((taxableAmount * taxRate) / 100).toFixed(2));
+        }
+        const total = parseFloat((taxableAmount + (taxInclusive ? 0 : tax) + shipping).toFixed(2));
         const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
         // Transaction order creation
         const order = await prisma_config_1.prisma.$transaction(async (tx) => {

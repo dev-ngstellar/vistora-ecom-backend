@@ -44,6 +44,8 @@ const controller = __importStar(require("./settings.controller"));
 const config_validation_1 = require("./config.validation");
 const router = (0, express_1.Router)();
 exports.settingsRouter = router;
+// Public store settings (taxes, currency, store name) accessible without admin auth
+router.get('/public', (0, async_handler_util_1.asyncHandler)(controller.getPublicSettings));
 router.use((0, async_handler_util_1.asyncHandler)(auth_middleware_1.authenticate), (0, rbac_middleware_1.requireRoles)(client_1.UserRole.SUPER_ADMIN, client_1.UserRole.ADMIN));
 router.get('/', (0, async_handler_util_1.asyncHandler)(controller.listSettings));
 router.put('/bulk', (0, validate_middleware_1.validateRequest)(config_validation_1.bulkUpsertSettingsSchema), (0, async_handler_util_1.asyncHandler)(controller.bulkUpsertSettings));

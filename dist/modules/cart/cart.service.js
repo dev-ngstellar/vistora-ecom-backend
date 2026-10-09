@@ -5,7 +5,7 @@ const coupon_repository_1 = require("../../repositories/coupon.repository");
 const product_repository_1 = require("../../repositories/product.repository");
 const cart_repository_1 = require("../../repositories/cart.repository");
 const api_error_util_1 = require("../../utils/api-error.util");
-const TAX_RATE = 0.08; // 8% sales tax
+const settings_service_1 = require("../config/settings.service");
 const STANDARD_SHIPPING_FEE = 0.0; // Free shipping
 const FREE_SHIPPING_THRESHOLD = 0.0; // Free shipping
 class CartService {
@@ -79,11 +79,21 @@ class CartService {
                 validCouponCode = null; // Expired or invalid coupon
             }
         }
+        const taxConfig = await (0, settings_service_1.getTaxSettings)();
+        const taxRate = Number(taxConfig.taxRate) || 0;
+        const taxInclusive = Boolean(taxConfig.taxInclusive);
+        const taxLabel = taxConfig.taxLabel || 'GST';
         const taxableAmount = Math.max(0, subtotal - discount);
-        const tax = Number((taxableAmount * TAX_RATE).toFixed(2));
+        let tax = 0;
+        if (taxInclusive) {
+            tax = Number(((taxableAmount * taxRate) / (100 + taxRate)).toFixed(2));
+        }
+        else {
+            tax = Number(((taxableAmount * taxRate) / 100).toFixed(2));
+        }
         const freeShippingEligible = subtotal >= FREE_SHIPPING_THRESHOLD;
         const shipping = subtotal > 0 ? (freeShippingEligible ? 0 : STANDARD_SHIPPING_FEE) : 0;
-        const total = Number((taxableAmount + tax + shipping).toFixed(2));
+        const total = Number((taxableAmount + (taxInclusive ? 0 : tax) + shipping).toFixed(2));
         // Sync recalculated totals back to cart database record
         await this.cartRepository.updateCartTotals(rawCart.id, {
             subtotal,
@@ -103,6 +113,9 @@ class CartService {
             subtotal,
             discount,
             tax,
+            taxRate,
+            taxLabel,
+            taxInclusive,
             shipping,
             total,
             itemCount: formattedItems.reduce((acc, item) => acc + item.quantity, 0),

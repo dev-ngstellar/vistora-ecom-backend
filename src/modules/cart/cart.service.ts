@@ -8,8 +8,8 @@ import {
   MergeGuestCartInput,
   UpdateCartItemInput,
 } from './cart.types';
+import { getTaxSettings } from '../config/settings.service';
 
-const TAX_RATE = 0.08; // 8% sales tax
 const STANDARD_SHIPPING_FEE = 0.0; // Free shipping
 const FREE_SHIPPING_THRESHOLD = 0.0; // Free shipping
 
@@ -100,11 +100,23 @@ export class CartService {
       }
     }
 
+    const taxConfig = await getTaxSettings();
+    const taxRate = Number(taxConfig.taxRate) || 0;
+    const taxInclusive = Boolean(taxConfig.taxInclusive);
+    const taxLabel = taxConfig.taxLabel || 'GST';
+
     const taxableAmount = Math.max(0, subtotal - discount);
-    const tax = Number((taxableAmount * TAX_RATE).toFixed(2));
+
+    let tax = 0;
+    if (taxInclusive) {
+      tax = Number(((taxableAmount * taxRate) / (100 + taxRate)).toFixed(2));
+    } else {
+      tax = Number(((taxableAmount * taxRate) / 100).toFixed(2));
+    }
+
     const freeShippingEligible = subtotal >= FREE_SHIPPING_THRESHOLD;
     const shipping = subtotal > 0 ? (freeShippingEligible ? 0 : STANDARD_SHIPPING_FEE) : 0;
-    const total = Number((taxableAmount + tax + shipping).toFixed(2));
+    const total = Number((taxableAmount + (taxInclusive ? 0 : tax) + shipping).toFixed(2));
 
     // Sync recalculated totals back to cart database record
     await this.cartRepository.updateCartTotals(rawCart.id, {
@@ -126,6 +138,9 @@ export class CartService {
       subtotal,
       discount,
       tax,
+      taxRate,
+      taxLabel,
+      taxInclusive,
       shipping,
       total,
       itemCount: formattedItems.reduce((acc, item) => acc + item.quantity, 0),

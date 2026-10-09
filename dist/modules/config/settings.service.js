@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteSetting = exports.bulkUpsertSettings = exports.upsertSetting = exports.getSetting = exports.listSettings = void 0;
+exports.getTaxSettings = exports.deleteSetting = exports.bulkUpsertSettings = exports.upsertSetting = exports.getSetting = exports.listSettings = void 0;
 const settings_repository_1 = require("./settings.repository");
 const config_service_1 = require("./config.service");
 const listSettings = async () => settings_repository_1.settingsRepository.findAll();
@@ -49,3 +49,30 @@ const deleteSetting = async (key, userId, ip) => {
     return result;
 };
 exports.deleteSetting = deleteSetting;
+const getTaxSettings = async () => {
+    const defaultTax = {
+        taxRate: 5,
+        taxLabel: 'GST',
+        taxInclusive: false,
+        gstNumber: '27AABCV1234A1Z5',
+    };
+    try {
+        const setting = await settings_repository_1.settingsRepository.findByKey('tax_settings');
+        if (setting?.value) {
+            const parsed = JSON.parse(setting.value);
+            return {
+                taxRate: parsed.taxRate !== undefined && !isNaN(Number(parsed.taxRate))
+                    ? Number(parsed.taxRate)
+                    : defaultTax.taxRate,
+                taxLabel: parsed.taxLabel || defaultTax.taxLabel,
+                taxInclusive: parsed.taxInclusive !== undefined
+                    ? Boolean(parsed.taxInclusive)
+                    : defaultTax.taxInclusive,
+                gstNumber: parsed.gstNumber || defaultTax.gstNumber,
+            };
+        }
+    }
+    catch (err) { }
+    return defaultTax;
+};
+exports.getTaxSettings = getTaxSettings;

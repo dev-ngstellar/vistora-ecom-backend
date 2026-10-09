@@ -55,3 +55,41 @@ export const deleteSetting = async (key: string, userId?: string, ip?: string) =
   });
   return result;
 };
+
+export interface TaxSettingsData {
+  taxRate: number;
+  taxLabel: string;
+  taxInclusive: boolean;
+  gstNumber: string;
+}
+
+export const getTaxSettings = async (): Promise<TaxSettingsData> => {
+  const defaultTax: TaxSettingsData = {
+    taxRate: 5,
+    taxLabel: 'GST',
+    taxInclusive: false,
+    gstNumber: '27AABCV1234A1Z5',
+  };
+
+  try {
+    const setting = await settingsRepository.findByKey('tax_settings');
+    if (setting?.value) {
+      const parsed = JSON.parse(setting.value);
+      return {
+        taxRate:
+          parsed.taxRate !== undefined && !isNaN(Number(parsed.taxRate))
+            ? Number(parsed.taxRate)
+            : defaultTax.taxRate,
+        taxLabel: parsed.taxLabel || defaultTax.taxLabel,
+        taxInclusive:
+          parsed.taxInclusive !== undefined
+            ? Boolean(parsed.taxInclusive)
+            : defaultTax.taxInclusive,
+        gstNumber: parsed.gstNumber || defaultTax.gstNumber,
+      };
+    }
+  } catch (err) {}
+
+  return defaultTax;
+};
+

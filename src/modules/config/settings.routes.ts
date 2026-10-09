@@ -9,6 +9,9 @@ import { upsertSettingSchema, bulkUpsertSettingsSchema } from './config.validati
 
 const router = Router();
 
+// Public store settings (taxes, currency, store name) accessible without admin auth
+router.get('/public', asyncHandler(controller.getPublicSettings));
+
 router.use(asyncHandler(authenticate), requireRoles(UserRole.SUPER_ADMIN, UserRole.ADMIN));
 
 router.get('/', asyncHandler(controller.listSettings));

@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteSetting = exports.bulkUpsertSettings = exports.upsertSetting = exports.getSetting = exports.listSettings = void 0;
+exports.getPublicSettings = exports.deleteSetting = exports.bulkUpsertSettings = exports.upsertSetting = exports.getSetting = exports.listSettings = void 0;
 const http_status_constant_1 = require("../../constants/http-status.constant");
 const api_response_util_1 = require("../../utils/api-response.util");
 const settingsService = __importStar(require("./settings.service"));
@@ -69,3 +69,10 @@ const deleteSetting = async (req, res) => {
     return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.OK, 'Setting deleted', null);
 };
 exports.deleteSetting = deleteSetting;
+const getPublicSettings = async (_req, res) => {
+    const tax = await settingsService.getTaxSettings();
+    return api_response_util_1.ApiResponseHandler.success(res, http_status_constant_1.HTTP_STATUS.OK, 'Public settings retrieved', {
+        tax,
+    });
+};
+exports.getPublicSettings = getPublicSettings;
