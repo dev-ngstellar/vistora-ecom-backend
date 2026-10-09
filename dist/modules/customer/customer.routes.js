@@ -6,15 +6,17 @@ const express_1 = require("express");
 const auth_middleware_1 = require("../../middleware/auth.middleware");
 const rbac_middleware_1 = require("../../middleware/rbac.middleware");
 const async_handler_util_1 = require("../../utils/async-handler.util");
+const validate_middleware_1 = require("../../middleware/validate.middleware");
 const customer_controller_1 = require("./customer.controller");
+const customer_validation_1 = require("./customer.validation");
 const customerRouter = (0, express_1.Router)();
 exports.customerRouter = customerRouter;
 const customerController = new customer_controller_1.CustomerController();
 customerRouter.use('/customers', auth_middleware_1.authenticate);
 // ==================== CUSTOMER SELF-SERVICE ADDRESS ROUTES ====================
 customerRouter.get('/customers/addresses', (0, async_handler_util_1.asyncHandler)(customerController.getMyAddresses));
-customerRouter.post('/customers/addresses', (0, async_handler_util_1.asyncHandler)(customerController.createAddress));
-customerRouter.put('/customers/addresses/:id', (0, async_handler_util_1.asyncHandler)(customerController.updateAddress));
+customerRouter.post('/customers/addresses', (0, validate_middleware_1.validateRequest)(customer_validation_1.createAddressSchema), (0, async_handler_util_1.asyncHandler)(customerController.createAddress));
+customerRouter.put('/customers/addresses/:id', (0, validate_middleware_1.validateRequest)(customer_validation_1.updateAddressSchema), (0, async_handler_util_1.asyncHandler)(customerController.updateAddress));
 customerRouter.delete('/customers/addresses/:id', (0, async_handler_util_1.asyncHandler)(customerController.deleteAddress));
 // ==================== ADMIN MANAGEMENT ROUTES ====================
 customerRouter.get('/customers/stats', (0, rbac_middleware_1.requireRoles)(client_1.UserRole.SUPER_ADMIN, client_1.UserRole.ADMIN, client_1.UserRole.MANAGER), (0, async_handler_util_1.asyncHandler)(customerController.getCustomerStats));
