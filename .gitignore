@@ -8,11 +8,9 @@ build/
 
 # Environment files
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
 !.env.example
+!.env.test
 
 # Uploaded media
 public/uploads/*
