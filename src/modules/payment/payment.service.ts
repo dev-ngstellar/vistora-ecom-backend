@@ -61,38 +61,14 @@ export class PaymentService {
         throw ApiError.badRequest('This order has already been paid and confirmed');
       }
     } else if (input.addressId) {
-      // Check if user has an existing recent PENDING Razorpay order for this address
-      const existingPending = await prisma.order.findFirst({
-        where: {
-          userId,
-          status: OrderStatus.PENDING,
-          addressId: input.addressId,
-          payments: {
-            some: {
-              paymentMethod: PaymentMethod.RAZORPAY,
-              status: PaymentStatus.PENDING,
-            },
-          },
-          createdAt: {
-            gte: new Date(Date.now() - 15 * 60 * 1000), // within last 15 mins
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        include: { payments: true, user: true },
+      // Full checkout initiation with accurate server-side pricing from current cart
+      order = await this.orderService.createCustomerOrder(userId, {
+        addressId: input.addressId,
+        paymentMethod: PaymentMethod.RAZORPAY,
+        couponCode: input.couponCode,
+        notes: input.notes,
+        items: input.items,
       });
-
-      if (existingPending) {
-        order = existingPending;
-      } else {
-        // Full checkout initiation with server-side pricing
-        order = await this.orderService.createCustomerOrder(userId, {
-          addressId: input.addressId,
-          paymentMethod: PaymentMethod.RAZORPAY,
-          couponCode: input.couponCode,
-          notes: input.notes,
-          items: input.items,
-        });
-      }
     } else {
       throw ApiError.badRequest('Either orderId or addressId must be provided to create a payment order');
     }

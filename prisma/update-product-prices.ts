@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -13,8 +13,8 @@ interface PriceConfig {
 const pricingData: PriceConfig[] = [
   {
     tamilName: 'வரகு',
-    nameMatch: 'Varagu',
-    slugMatch: 'varagu',
+    nameMatch: 'Organic Varagu',
+    slugMatch: 'organic-varagu',
     price500g: 131.0,
     price1kg: 185.0,
   },
@@ -162,9 +162,9 @@ async function updatePrices() {
     const products = await prisma.product.findMany({
       where: {
         OR: [
-          { name: { contains: item.nameMatch, mode: 'insensitive' } },
+          { name: { contains: item.nameMatch, mode: Prisma.QueryMode.insensitive } },
           ...(item.slugMatch
-            ? [{ slug: { contains: item.slugMatch, mode: 'insensitive' } }]
+            ? [{ slug: { contains: item.slugMatch, mode: Prisma.QueryMode.insensitive } }]
             : []),
         ],
       },
@@ -194,29 +194,31 @@ async function updatePrices() {
         for (const variant of product.variants) {
           const sizeLower = (variant.size || '').toLowerCase();
           const skuLower = (variant.sku || '').toLowerCase();
+          const currentPrice = Number(variant.price);
+          const variantWeight = variant.weight !== null ? Number(variant.weight) : null;
 
-          let newPrice = variant.price;
+          let newPrice = currentPrice;
 
           if (sizeLower.includes('500') || skuLower.includes('500g') || sizeLower.includes('1/2')) {
             newPrice = item.price500g;
           } else if (sizeLower.includes('1kg') || skuLower.includes('1kg') || sizeLower.includes('1 kg')) {
             newPrice = item.price1kg;
-          } else if (variant.weight === 0.5) {
+          } else if (variantWeight === 0.5) {
             newPrice = item.price500g;
-          } else if (variant.weight === 1.0) {
+          } else if (variantWeight === 1.0) {
             newPrice = item.price1kg;
           }
 
-          if (newPrice !== variant.price) {
+          if (newPrice !== currentPrice) {
             await prisma.productVariant.update({
               where: { id: variant.id },
               data: {
                 price: newPrice,
               },
             });
-            console.log(`   └─ Variant ${variant.size || variant.sku}: ₹${variant.price} -> ₹${newPrice}`);
+            console.log(`   └─ Variant ${variant.size || variant.sku}: ₹${currentPrice} -> ₹${newPrice}`);
           } else {
-            console.log(`   └─ Variant ${variant.size || variant.sku}: kept ₹${variant.price}`);
+            console.log(`   └─ Variant ${variant.size || variant.sku}: kept ₹${currentPrice}`);
           }
         }
       } else {
