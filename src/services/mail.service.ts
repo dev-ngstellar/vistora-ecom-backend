@@ -21,6 +21,7 @@ class MailService {
   private primaryAdminEmail = process.env.ADMIN_EMAIL || 'vistoraoffice123@gmail.com';
   private officialSupportEmail = 'vistoraoffice123@gmail.com';
   private sentOrderNotificationIds = new Set<string>();
+  private sentCustomerOrderNotificationIds = new Set<string>();
 
   private getTransporter(): Transporter {
     if (this.transporter) {
@@ -341,7 +342,7 @@ class MailService {
           ).toFixed(2);
           return `
             <tr style="border-bottom: 1px solid #f1f5f9;">
-              <td style="padding: 10px; color: #1e293b; font-weight: 600;">${item.productName || 'Product'}</td>
+              <td style="padding: 10px; color: #1e293b; font-weight: 600;">${item.productName || item.product?.name || item.name || 'Organic Product'}</td>
               <td style="padding: 10px; color: #64748b; font-family: monospace; font-size: 11px;">${item.sku || '—'}</td>
               <td style="padding: 10px; text-align: center; color: #334155;">${item.quantity}</td>
               <td style="padding: 10px; text-align: right; color: #334155;">₹${unitPrice}</td>
@@ -457,6 +458,240 @@ class MailService {
       return { success: true, messageId: info.messageId };
     } catch (err: any) {
       logger.error({ err, orderIdOrData }, 'Error sending admin order notification email via Nodemailer');
+      return { success: false, error: err.message };
+    }
+  }
+
+  /**
+   * Send Order Confirmation & Tracking Guidance Email to Customer upon successful purchase
+   */
+  public async sendCustomerOrderSuccessNotification(
+    orderIdOrData: string | any,
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      let order: any = null;
+      if (typeof orderIdOrData === 'string') {
+        order = await prisma.order.findUnique({
+          where: { id: orderIdOrData },
+          include: {
+            user: true,
+            address: true,
+            items: true,
+            payments: true,
+          },
+        });
+      } else if (orderIdOrData && orderIdOrData.id) {
+        if (orderIdOrData.items && orderIdOrData.address && orderIdOrData.user) {
+          order = orderIdOrData;
+        } else {
+          order = await prisma.order.findUnique({
+            where: { id: orderIdOrData.id },
+            include: {
+              user: true,
+              address: true,
+              items: true,
+              payments: true,
+            },
+          });
+        }
+      }
+
+      if (!order) {
+        logger.warn({ orderIdOrData }, 'Cannot send customer order email: Order not found');
+        return { success: false, error: 'Order not found' };
+      }
+
+      const customerEmail = order.user?.email || order.address?.email;
+      if (!customerEmail || customerEmail === 'Not provided') {
+        logger.warn({ orderId: order.id }, 'Cannot send customer order email: No customer email provided');
+        return { success: false, error: 'No customer email found' };
+      }
+
+      // Avoid duplicate customer confirmation emails
+      if (this.sentCustomerOrderNotificationIds.has(order.id)) {
+        logger.info(
+          { orderId: order.id, orderNumber: order.orderNumber },
+          'Customer order confirmation already sent, skipping duplicate',
+        );
+        return { success: true };
+      }
+      this.sentCustomerOrderNotificationIds.add(order.id);
+
+      const transporter = this.getTransporter();
+
+      const customerName = order.user
+        ? `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim() || order.user.email
+        : order.address?.recipientName || 'Valued Customer';
+      const customerPhone = order.address?.phone || order.user?.phone || 'Not provided';
+
+      const formattedAddress = order.address
+        ? [
+            order.address.addressLine1,
+            order.address.addressLine2,
+            order.address.city,
+            order.address.state,
+            order.address.postalCode,
+            order.address.country,
+          ]
+            .filter(Boolean)
+            .join(', ')
+        : 'Delivery Address on file';
+
+      const payment = order.payments?.[0];
+      const paymentMethod = payment?.paymentMethod || 'ONLINE';
+      const paymentStatus = payment?.status || order.status || 'CONFIRMED';
+
+      const itemsHtml = (order.items || [])
+        .map((item: any) => {
+          const unitPrice = Number(item.unitPrice || 0).toFixed(2);
+          const total = Number(
+            item.total || item.totalPrice || Number(item.unitPrice) * item.quantity,
+          ).toFixed(2);
+          return `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 12px 10px; color: #1e293b; font-weight: 600;">${item.productName || item.product?.name || item.name || 'Organic Product'}</td>
+              <td style="padding: 12px 10px; text-align: center; color: #334155;">${item.quantity}</td>
+              <td style="padding: 12px 10px; text-align: right; color: #334155;">₹${unitPrice}</td>
+              <td style="padding: 12px 10px; text-align: right; font-weight: 700; color: #0f172a;">₹${total}</td>
+            </tr>
+          `;
+        })
+        .join('');
+
+      const trackingPageUrl = `${process.env.APP_URL || 'https://vistoracommerce.com'}/orders`;
+
+      const customerOrderMailOptions = {
+        from: `"Vistora Pure Organics" <${env.EMAIL_FROM || 'noreply@vistoracommerce.com'}>`,
+        to: customerEmail,
+        replyTo: 'vistoraoffice123@gmail.com',
+        subject: `Order Confirmed: #${order.orderNumber} — Thank You for Your Purchase!`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 24px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;">
+            <!-- Brand Banner Header -->
+            <div style="background: linear-gradient(135deg, #A50025 0%, #700019 100%); padding: 26px 20px; border-radius: 12px; text-align: center; margin-bottom: 24px;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 1.5px;">VISTORA</h1>
+              <p style="color: #ffd7aa; margin: 6px 0 0 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Pure Organics, Heritage Rice & Native Millets</p>
+            </div>
+
+            <!-- Warm Greeting & Confirmation -->
+            <div style="margin-bottom: 20px;">
+              <h2 style="font-size: 20px; color: #0f172a; margin: 0 0 8px 0; font-weight: 800;">Thank you for your purchase! 🎉</h2>
+              <p style="font-size: 14px; color: #475569; line-height: 1.6; margin: 0;">
+                Dear <strong>${customerName}</strong>, we are pleased to confirm that your order <strong>#${order.orderNumber}</strong> has been received and confirmed. Our fulfillment specialists are carefully preparing your fresh heritage products for dispatch.
+              </p>
+            </div>
+
+            <!-- PROMINENT ORDER TRACKING CALLOUT -->
+            <div style="background-color: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 16px 18px; margin: 20px 0;">
+              <div style="display: flex; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 16px; margin-right: 8px;">🚚</span>
+                <strong style="color: #166534; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Order Tracking & Real-Time Updates</strong>
+              </div>
+              <p style="margin: 0 0 12px 0; font-size: 13px; color: #15803d; line-height: 1.5;">
+                For order tracking, you can check the <strong>My Orders</strong> page at any time to monitor your shipment status, live dispatch progress, and delivery details.
+              </p>
+              <div>
+                <a href="${trackingPageUrl}" style="background-color: #166534; color: #ffffff; padding: 9px 18px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 12px; display: inline-block;">
+                  Check My Orders Page →
+                </a>
+              </div>
+            </div>
+
+            <!-- Order Meta & Delivery Details -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
+              <tr>
+                <td style="width: 50%; vertical-align: top; padding: 14px; background-color: #f8fafc; border-radius: 8px 0 0 8px;">
+                  <strong style="color: #0f172a; font-size: 13px; display: block; margin-bottom: 8px; text-transform: uppercase;">Order Details</strong>
+                  <p style="margin: 2px 0; color: #334155;"><strong>Order Reference:</strong> #${order.orderNumber}</p>
+                  <p style="margin: 2px 0; color: #334155;"><strong>Payment Method:</strong> ${paymentMethod}</p>
+                  <p style="margin: 2px 0; color: #334155;"><strong>Payment Status:</strong> <span style="color: #16a34a; font-weight: bold;">Confirmed (${paymentStatus})</span></p>
+                  <p style="margin: 2px 0; color: #334155;"><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                </td>
+                <td style="width: 50%; vertical-align: top; padding: 14px; background-color: #f8fafc; border-radius: 0 8px 8px 0;">
+                  <strong style="color: #0f172a; font-size: 13px; display: block; margin-bottom: 8px; text-transform: uppercase;">Delivery Destination</strong>
+                  <p style="margin: 2px 0; color: #334155; font-weight: 600;">${customerName}</p>
+                  <p style="margin: 2px 0; color: #334155; line-height: 1.4;">${formattedAddress}</p>
+                  <p style="margin: 4px 0 0 0; color: #64748b; font-size: 12px;">Contact Phone: ${customerPhone}</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Items Purchased Table -->
+            <h3 style="color: #0f172a; font-size: 15px; margin: 20px 0 10px 0; font-weight: 700;">Purchased Products</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
+              <thead>
+                <tr style="background-color: #f1f5f9; text-align: left;">
+                  <th style="padding: 10px; border-bottom: 2px solid #e2e8f0; color: #475569;">Item</th>
+                  <th style="padding: 10px; border-bottom: 2px solid #e2e8f0; color: #475569; text-align: center;">Qty</th>
+                  <th style="padding: 10px; border-bottom: 2px solid #e2e8f0; color: #475569; text-align: right;">Unit Price</th>
+                  <th style="padding: 10px; border-bottom: 2px solid #e2e8f0; color: #475569; text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <!-- Grand Total Summary -->
+            <div style="background-color: #f8fafc; border-radius: 8px; padding: 14px 16px; margin-bottom: 24px;">
+              <table style="width: 100%; font-size: 13px; color: #334155;">
+                <tr>
+                  <td style="padding: 4px 0;">Subtotal:</td>
+                  <td style="padding: 4px 0; text-align: right; font-weight: 600;">₹${Number(order.subtotal).toFixed(2)}</td>
+                </tr>
+                ${Number(order.discount) > 0 ? `
+                <tr style="color: #16a34a;">
+                  <td style="padding: 4px 0;">Discount Applied:</td>
+                  <td style="padding: 4px 0; text-align: right; font-weight: 600;">-₹${Number(order.discount).toFixed(2)}</td>
+                </tr>` : ''}
+                <tr>
+                  <td style="padding: 4px 0;">Delivery / Shipping:</td>
+                  <td style="padding: 4px 0; text-align: right; font-weight: 600;">${Number(order.shipping) === 0 ? 'FREE' : `₹${Number(order.shipping).toFixed(2)}`}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0;">Taxes Included:</td>
+                  <td style="padding: 4px 0; text-align: right; font-weight: 600;">₹${Number(order.tax).toFixed(2)}</td>
+                </tr>
+                <tr style="border-top: 1.5px solid #cbd5e1; font-size: 16px; color: #0f172a;">
+                  <td style="padding: 10px 0 4px 0; font-weight: 800;">Grand Total:</td>
+                  <td style="padding: 10px 0 4px 0; text-align: right; font-weight: 900; color: #A50025;">₹${Number(order.total).toFixed(2)}</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- SLA & Delivery Timeline -->
+            <div style="background-color: #fff7ed; border-left: 4px solid #f97316; border-radius: 6px; padding: 12px 16px; margin-bottom: 24px; font-size: 13px; color: #9a3412;">
+              <strong style="display: block; margin-bottom: 4px;">📦 Dispatch & Delivery Timeline:</strong>
+              <p style="margin: 0; line-height: 1.5;">
+                • Standard Dispatch: Within 2–3 business days<br/>
+                • Delivery SLA: 2–5 business days post dispatch (Pan-India)
+              </p>
+            </div>
+
+            <!-- Customer Support Footer -->
+            <div style="background-color: #f8fafc; border-radius: 8px; padding: 14px 16px; text-align: center; margin-bottom: 20px; font-size: 13px; color: #475569;">
+              <strong style="color: #0f172a;">Have questions or need assistance?</strong>
+              <p style="margin: 6px 0 0 0;">
+                Reach us at <a href="mailto:vistoraoffice123@gmail.com" style="color: #A50025; font-weight: bold;">vistoraoffice123@gmail.com</a> or helpline <a href="tel:+919344447088" style="color: #A50025; font-weight: bold;">+91 93444 47088</a> (9:00 AM – 9:00 PM, All 7 Days).
+              </p>
+            </div>
+
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+              <p style="margin: 0 0 4px 0; font-weight: 600;">VISTORA TRADING PRIVATE LIMITED</p>
+              <p style="margin: 0;">31 H1, Ayyampalayam, Edapadi Road, Komarapalayam - 638183, Tamil Nadu</p>
+            </div>
+          </div>
+        `,
+      };
+
+      const info = await transporter.sendMail(customerOrderMailOptions);
+      logger.info(
+        { messageId: info.messageId, orderNumber: order.orderNumber, customerEmail },
+        'Customer order confirmation email sent successfully',
+      );
+      return { success: true, messageId: info.messageId };
+    } catch (err: any) {
+      logger.error({ err, orderIdOrData }, 'Error sending customer order confirmation email via Nodemailer');
       return { success: false, error: err.message };
     }
   }

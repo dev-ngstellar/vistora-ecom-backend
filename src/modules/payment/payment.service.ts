@@ -242,10 +242,22 @@ export class PaymentService {
         }),
       ]);
 
+      // Clear customer cart items upon successful online payment verification
+      if (order.userId) {
+        const userCart = await prisma.cart.findUnique({ where: { userId: order.userId } });
+        if (userCart) {
+          await prisma.cartItem.deleteMany({ where: { cartId: userCart.id } });
+          logger.info({ userId: order.userId, cartId: userCart.id }, 'Customer cart cleared after successful Razorpay verification');
+        }
+      }
+
       // Trigger admin payment notification & email
       this.notificationService.createPaymentNotification(order).catch(() => {});
       mailService.sendAdminOrderSuccessNotification(order.id).catch((err) => {
         logger.error({ err }, 'Failed sending admin order email notification on payment verification');
+      });
+      mailService.sendCustomerOrderSuccessNotification(order.id).catch((err) => {
+        logger.error({ err }, 'Failed sending customer order confirmation email on payment verification');
       });
 
       return {
@@ -271,8 +283,20 @@ export class PaymentService {
         }),
       ]);
 
+      // Clear customer cart items upon COD confirmation
+      if (order.userId) {
+        const userCart = await prisma.cart.findUnique({ where: { userId: order.userId } });
+        if (userCart) {
+          await prisma.cartItem.deleteMany({ where: { cartId: userCart.id } });
+          logger.info({ userId: order.userId, cartId: userCart.id }, 'Customer cart cleared after COD confirmation');
+        }
+      }
+
       mailService.sendAdminOrderSuccessNotification(order.id).catch((err) => {
         logger.error({ err }, 'Failed sending admin order email notification on COD verification');
+      });
+      mailService.sendCustomerOrderSuccessNotification(order.id).catch((err) => {
+        logger.error({ err }, 'Failed sending customer order confirmation email on COD verification');
       });
 
       return {
@@ -351,6 +375,9 @@ export class PaymentService {
           logger.info(`Order #${payment.order.orderNumber} successfully confirmed via webhook reconciliation`);
           mailService.sendAdminOrderSuccessNotification(payment.orderId).catch((err) => {
             logger.error({ err }, 'Failed sending admin order email notification on webhook reconciliation');
+          });
+          mailService.sendCustomerOrderSuccessNotification(payment.orderId).catch((err) => {
+            logger.error({ err }, 'Failed sending customer order confirmation email on webhook reconciliation');
           });
         }
       }

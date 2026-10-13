@@ -406,6 +406,9 @@ export class OrderService {
       mailService.sendAdminOrderSuccessNotification(order.id).catch((err) => {
         logger.error({ err }, 'Failed sending admin order email notification for COD order');
       });
+      mailService.sendCustomerOrderSuccessNotification(order.id).catch((err) => {
+        logger.error({ err }, 'Failed sending customer order confirmation email for COD order');
+      });
     }
 
     return order;
@@ -460,6 +463,9 @@ export class OrderService {
 
     mailService.sendAdminOrderSuccessNotification(input.orderId).catch((err) => {
       logger.error({ err }, 'Failed sending admin order email notification on verifyPayment');
+    });
+    mailService.sendCustomerOrderSuccessNotification(input.orderId).catch((err) => {
+      logger.error({ err }, 'Failed sending customer order email notification on verifyPayment');
     });
 
     return {
